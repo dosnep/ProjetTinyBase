@@ -55,12 +55,13 @@ struct TestRec {
 //
 // Global PF_Manager and RM_Manager variables
 //
-PF_Manager pfm;
-RM_Manager rmm(pfm);
+//PF_Manager pfm;
+//RM_Manager rmm(pfm);
 
 //
 // Function declarations
 //
+/**
 RC Test1(void);
 RC Test2(void);
 
@@ -89,12 +90,40 @@ int (*tests[])() =                      // RC doesn't work on some compilers
     Test1,
     Test2
 };
-
+**/
 //
 // main
 //
 int main(int argc, char *argv[])
 {
+	RID *dst = new RID();
+	RID *src = new RID(1,45);
+	RID *retour = new RID();
+	dst = src;
+	int p, s;
+	dst->GetPageNum(p);
+	dst->GetSlotNum(s);
+	
+	std :: cout<<"pageNum : "<<p<<" slotNum : "<<s<<std::endl;
+	p = 0; s = 0;
+	char *retour1 = new char[7];
+	char *record1 = new char[7];
+	strcpy(record1,(char*)"ENR1");
+	RM_Record *r1 = new RM_Record();
+	r1->SetViableRecord(true);
+	r1->SetData(record1,7);
+	r1->SetRid(*dst);
+	r1->GetData(retour1);
+	r1->GetRid(*retour);
+	retour->GetPageNum(p);
+	retour->GetSlotNum(s);
+	std :: cout<<retour1<<std::endl;
+	std :: cout<<"pageNum : "<<p<<" slotNum : "<<s<<std::endl;
+
+
+
+
+/**	
     RC   rc;
     char *progName = argv[0];   // since we will be changing argv
     int  testNum;
@@ -495,5 +524,8 @@ RC Test2(void)
         return (rc);
 
     printf("\ntest2 done ********************\n");
+    
+
     return (0);
+  **/
 }

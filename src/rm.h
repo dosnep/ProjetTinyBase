@@ -22,6 +22,17 @@
 #include "rm_rid.h"
 #include "pf.h"
 
+typedef struct rm_fileheader rm_FileHeader;
+struct rm_fileheader{
+	int RecordSize;	//Taille d'un enregistrement
+	int TotalRecordsPerPage;	//Nb d'enregistrements par page
+	int TotalPage;	//Nb total de page dans le fichier
+	PageNum NextFreePage; //Première page libre du fichier
+		
+};
+
+
+
 //
 // RM_Record: RM Record interface
 //
@@ -29,13 +40,26 @@ class RM_Record {
 public:
     RM_Record ();
     ~RM_Record();
-
+	
+	//getter
     // Return the data corresponding to the record.  Sets *pData to the
     // record contents.
     RC GetData(char *&pData) const;
 
     // Return the RID associated with the record
     RC GetRid (RID &rid) const;
+ 
+	//setter
+	RC SetData(const char *pData, const int recordSize);
+	RC SetRid(const RID &rid);
+	RC SetViableRecord(const bool cond);
+ 
+private:
+char *pData; //Données de l'enregistrement
+RID *rid; //Coordonnées RID de l'enregistrement
+bool viableRecord; //Test si l'enregistrement a été chargé avec rm_filescan ou rm_filehandle 
+int recordSize;	//Taille de l'enregistrement;
+   
 };
 
 //
@@ -91,6 +115,10 @@ public:
     RC OpenFile   (const char *fileName, RM_FileHandle &fileHandle);
 
     RC CloseFile  (RM_FileHandle &fileHandle);
+    
+private:
+PF_Manager *pfm;
+  
 };
 
 //
@@ -98,4 +126,5 @@ public:
 //
 void RM_PrintError(RC rc);
 
+#define RM_RECORD_NOT_VIABLE 2;
 #endif
