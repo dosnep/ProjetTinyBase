@@ -122,6 +122,17 @@ int main(int argc, char *argv[])
 
 
 
+	RM_FileHandle *pf = new RM_FileHandle();
+	pf->SetViableFile(true);
+	
+	rm_FileHeader rfh;
+	rfh.recordSize = 10;
+	rfh.nbRecordsPerPage = 3;
+	rfh.NextFreePage = 4;
+	pf->SetFh(rfh);
+	
+	//std :: cout<<"recordsize : "<<pf->fh.recordSize<<" nbRecordsPerPage : "<<pf->fh.nbRecordsPerPage<<" NextFreePage : "<<pf->fh.NextFreePage<<std::endl;
+
 
 /**	
     RC   rc;

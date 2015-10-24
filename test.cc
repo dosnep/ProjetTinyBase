@@ -25,8 +25,9 @@ PData = retour+rec.size;
 memcpy(PData,&"salut",rec.size);
 **/
 //printf("%s\n",retour+rec.size);
-	
-int tab[8];
+
+int *tab;
+tab = new int[8];
 int i;
 for(i = 0;i<8;i++)
 {

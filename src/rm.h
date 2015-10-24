@@ -24,13 +24,37 @@
 
 typedef struct rm_fileheader rm_FileHeader;
 struct rm_fileheader{
-	int RecordSize;	//Taille d'un enregistrement
-	int TotalRecordsPerPage;	//Nb d'enregistrements par page
-	int TotalPage;	//Nb total de page dans le fichier
+	int recordSize;	//Taille d'un enregistrement
+	int nbRecordsPerPage;	//Nb d'enregistrements par page
 	PageNum NextFreePage; //Première page libre du fichier
 		
 };
 
+
+//class Bitmap, utile pour donner une vision des slots libres et occupés
+class Bitmap{
+	
+	public:
+	Bitmap(int taille);
+	~Bitmap();
+	bool IsFull(); //Teste si tout les bits sont à 1
+	RC GetFirstFree(SlotNum &slotnum) ; //Retourne le premier slot où le bit est à 0
+	RC SetSlot(const SlotNum &slotnum,const int &value);//Initialise le bit de slotnum à value
+	
+	private:
+	int *tabBitmap;
+	int taille;
+	
+};
+
+
+typedef struct rm_pageheader rm_PageHeader;
+struct rm_pageheader{
+	
+	PageNum NextFreePage; //Prochaine page libre
+	Bitmap tab;	//Bitmap de la page	
+	
+};
 
 
 //
@@ -81,6 +105,20 @@ public:
     // Forces a page (along with any contents stored in this class)
     // from the buffer pool to disk.  Default value forces all pages.
     RC ForcePages (PageNum pageNum = ALL_PAGES);
+
+
+	//setter
+	RC SetViableFile(const bool &cond);
+	RC SetPf(const PF_FileHandle *pf);
+	RC SetFh(const rm_FileHeader &fh);
+
+private :
+
+bool viableFile; //bool qui teste si le fichier a été ouvert
+PF_FileHandle *pf;
+rm_FileHeader fh;	//FileHeader propre au fichier chargé
+
+
 };
 
 //
@@ -127,4 +165,6 @@ PF_Manager *pfm;
 void RM_PrintError(RC rc);
 
 #define RM_RECORD_NOT_VIABLE 2;
+#define BITMAP_NO_FREE_SLOT 3;
+#define RM_FILEHANDLE_NOT_VIABLE 4;
 #endif
