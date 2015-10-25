@@ -26,7 +26,7 @@ typedef struct rm_fileheader rm_FileHeader;
 struct rm_fileheader{
 	int recordSize;	//Taille d'un enregistrement
 	int nbRecordsPerPage;	//Nb d'enregistrements par page
-	PageNum NextFreePage; //Première page libre du fichier
+	PageNum nextFreePage; //Première page libre du fichier
 		
 };
 
@@ -51,8 +51,8 @@ class Bitmap{
 typedef struct rm_pageheader rm_PageHeader;
 struct rm_pageheader{
 	
-	PageNum NextFreePage; //Prochaine page libre
-	Bitmap tab;	//Bitmap de la page	
+	PageNum nextFreePage; //Prochaine page libre
+	Bitmap *tab;	//Bitmap de la page	
 	
 };
 
@@ -106,17 +106,23 @@ public:
     // from the buffer pool to disk.  Default value forces all pages.
     RC ForcePages (PageNum pageNum = ALL_PAGES);
 
+	RC InsertPageHeader(const PageNum &pagenum, const rm_PageHeader &pageHeader);
+	PageNum GetNextFreePage(); //Retourne la première page où il y a des slots de libres
+	
 
 	//setter
 	RC SetViableFile(const bool &cond);
 	RC SetPf(const PF_FileHandle *pf);
 	RC SetFh(const rm_FileHeader &fh);
 
+
 private :
 
-bool viableFile; //bool qui teste si le fichier a été ouvert
 PF_FileHandle *pf;
+bool viableFile; //bool qui teste si le fichier a été ouvert
 rm_FileHeader fh;	//FileHeader propre au fichier chargé
+
+friend class RM_Manager;
 
 
 };

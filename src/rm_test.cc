@@ -128,9 +128,8 @@ int main(int argc, char *argv[])
 	rm_FileHeader rfh;
 	rfh.recordSize = 10;
 	rfh.nbRecordsPerPage = 3;
-	rfh.NextFreePage = 4;
+	rfh.nextFreePage = -1;
 	pf->SetFh(rfh);
-	
 	//std :: cout<<"recordsize : "<<pf->fh.recordSize<<" nbRecordsPerPage : "<<pf->fh.nbRecordsPerPage<<" NextFreePage : "<<pf->fh.NextFreePage<<std::endl;
 
 

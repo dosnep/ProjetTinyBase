@@ -1,57 +1,74 @@
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 #include <cstring>
+
+
+class test{
+	public:
+int a;
+int b;
+test(int a, int b)
+{
+	this->a = a;
+	this->b = b;
+}
+	
+~test()
+{
+};
+	
+test &operator = (test t) 
+{
+	this->a = t.a;
+	this->b = t.b;
+	return *this;
+};
+	
+	
+};
 
 typedef struct record RECORD;
 struct record{
 	
 	int size;
+	test *t;
 };
 
 
 int main(int argc, char* argv[])
 {
-	/**
-RECORD rec;
-rec.size = 16;
-char* retour = new char[1024];
-int i;
-
-char *PData = new char[rec.size];
-
-PData = retour;
-memcpy(PData,&"hello",rec.size);
-PData = retour+rec.size;
-memcpy(PData,&"salut",rec.size);
-**/
-//printf("%s\n",retour+rec.size);
-
-int *tab;
-tab = new int[8];
-int i;
-for(i = 0;i<8;i++)
-{
-tab[i] = 0;
 	
-}
+	RECORD src;
+	RECORD dst;
+	char *recup;
+	recup = new char[34];
+	char *testChar = new char[50];
+	strcpy(testChar,"salut les copains");
+	printf("%s\n",testChar);
+	testChar += 20;
+	memcpy(testChar,testChar,5*sizeof(char));
+	printf("%s\n",testChar);
+	testChar -= 18;
+	printf("%s\n",testChar);
 
-for(i = 0;i<8;i++)
-{
-tab[i] = tab[i]|1;
 	
-}
+	src.size = 10;
+	src.t = new test(1,2);
 
-for(i = 0;i<8;i++)
-{
-tab[i] = tab[i]&0;
-	
-}
+	memcpy(recup,&src,sizeof(record));
+	memcpy(&dst,recup,sizeof(record));
 
-for(i = 0;i<8;i++)
-{
-printf("%d, \n",tab[i]);
+	printf("size = %d, a = %d, b = %d\n",dst.size,dst.t->a,dst.t->b);
+	//printf("sizeRecord = %d\n ",sizeof(record));
+	//printf("sizeTest = %d\n ",sizeof(test)+sizeof(int));
 	
-}
+	
+	test *tsrc;
+	test *tdst;
+	tsrc = new test(1,2);
+	tdst = tsrc;
+	printf("a = %d, b = %d\n",tdst->a, tdst->b);
+	
 
 
 	exit(0);
