@@ -55,13 +55,13 @@ struct TestRec {
 //
 // Global PF_Manager and RM_Manager variables
 //
-//PF_Manager pfm;
-//RM_Manager rmm(pfm);
+PF_Manager pfm;
+RM_Manager rmm(pfm);
 
 //
 // Function declarations
 //
-/**
+
 RC Test1(void);
 RC Test2(void);
 
@@ -84,56 +84,20 @@ RC GetNextRecScan(RM_FileScan &fs, RM_Record &rec);
 //
 // Array of pointers to the test functions
 //
+
 #define NUM_TESTS       2               // number of tests
 int (*tests[])() =                      // RC doesn't work on some compilers
 {
     Test1,
     Test2
 };
-**/
+
 //
 // main
 //
 int main(int argc, char *argv[])
 {
-	RID *dst = new RID();
-	RID *src = new RID(1,45);
-	RID *retour = new RID();
-	dst = src;
-	int p, s;
-	dst->GetPageNum(p);
-	dst->GetSlotNum(s);
 	
-	std :: cout<<"pageNum : "<<p<<" slotNum : "<<s<<std::endl;
-	p = 0; s = 0;
-	char *retour1 = new char[7];
-	char *record1 = new char[7];
-	strcpy(record1,(char*)"ENR1");
-	RM_Record *r1 = new RM_Record();
-	r1->SetViableRecord(true);
-	r1->SetData(record1,7);
-	r1->SetRid(*dst);
-	r1->GetData(retour1);
-	r1->GetRid(*retour);
-	retour->GetPageNum(p);
-	retour->GetSlotNum(s);
-	std :: cout<<retour1<<std::endl;
-	std :: cout<<"pageNum : "<<p<<" slotNum : "<<s<<std::endl;
-
-
-
-	RM_FileHandle *pf = new RM_FileHandle();
-	pf->SetViableFile(true);
-	
-	rm_FileHeader rfh;
-	rfh.recordSize = 10;
-	rfh.nbRecordsPerPage = 3;
-	rfh.nextFreePage = -1;
-	pf->SetFh(rfh);
-	//std :: cout<<"recordsize : "<<pf->fh.recordSize<<" nbRecordsPerPage : "<<pf->fh.nbRecordsPerPage<<" NextFreePage : "<<pf->fh.NextFreePage<<std::endl;
-
-
-/**	
     RC   rc;
     char *progName = argv[0];   // since we will be changing argv
     int  testNum;
@@ -153,7 +117,7 @@ int main(int argc, char *argv[])
             if ((rc = (tests[testNum])())) {
 
                 // Print the error and exit
-                PrintError(rc);
+                //PrintError(rc);
                 return (1);
             }
     }
@@ -196,12 +160,14 @@ int main(int argc, char *argv[])
 // Desc: Print an error message by calling the proper component-specific
 //       print-error function
 //
+
+
 void PrintError(RC rc)
 {
     if (abs(rc) <= END_PF_WARN)
         PF_PrintError(rc);
-    else if (abs(rc) <= END_RM_WARN)
-        RM_PrintError(rc);
+    //else if (abs(rc) <= END_RM_WARN)
+        //RM_PrintError(rc);
     else
         cerr << "Error code out of range: " << rc << "\n";
 }
@@ -259,11 +225,11 @@ RC AddRecs(RM_FileHandle &fh, int numRecs)
         sprintf(recBuf.str, "a%d", i);
         recBuf.num = i;
         recBuf.r = (float)i;
-        if ((rc = InsertRec(fh, (char *)&recBuf, rid)) ||
+        if ((rc = InsertRec(fh, (char *)&recBuf, rid))||
             (rc = rid.GetPageNum(pageNum)) ||
             (rc = rid.GetSlotNum(slotNum)))
             return (rc);
-
+		printf("pageNum : %d, slotNum : %d\n",pageNum,slotNum);
         if ((i + 1) % PROG_UNIT == 0){
             printf("%d  ", i + 1);
             fflush(stdout);
@@ -277,12 +243,13 @@ RC AddRecs(RM_FileHandle &fh, int numRecs)
     // Return ok
     return (0);
 }
-
+/**
 //
 // VerifyFile
 //
 // Desc: verify that a file has records as added by AddRecs
 //
+
 RC VerifyFile(RM_FileHandle &fh, int numRecs)
 {
     RC        rc;
@@ -334,7 +301,7 @@ RC VerifyFile(RM_FileHandle &fh, int numRecs)
     }
 
     if (rc != RM_EOF)
-        goto err;
+      goto err;
 
     if ((rc=fs.CloseScan()))
         return (rc);
@@ -392,7 +359,7 @@ RC PrintFile(RM_FileScan &fs)
     // Return ok
     return (0);
 }
-
+**/
 ////////////////////////////////////////////////////////////////////////
 // The following functions are wrappers for some of the RM component  //
 // methods.  They give you an opportunity to add debugging statements //
@@ -408,7 +375,7 @@ RC CreateFile(char *fileName, int recordSize)
 {
     printf("\ncreating %s\n", fileName);
     return (rmm.CreateFile(fileName, recordSize));
-}
+};
 
 //
 // DestroyFile
@@ -479,11 +446,12 @@ RC UpdateRec(RM_FileHandle &fh, RM_Record &rec)
 //
 // Desc: call RM_FileScan::GetNextRec
 //
+/**
 RC GetNextRecScan(RM_FileScan &fs, RM_Record &rec)
 {
     return (fs.GetNextRec(rec));
 }
-
+**/
 /////////////////////////////////////////////////////////////////////
 // Sample test functions follow.                                   //
 /////////////////////////////////////////////////////////////////////
@@ -493,6 +461,7 @@ RC GetNextRecScan(RM_FileScan &fs, RM_Record &rec)
 //
 RC Test1(void)
 {
+	
     RC            rc;
     RM_FileHandle fh;
 
@@ -509,6 +478,7 @@ RC Test1(void)
         return (rc);
 
     printf("\ntest1 done ********************\n");
+    
     return (0);
 }
 
@@ -517,6 +487,7 @@ RC Test1(void)
 //
 RC Test2(void)
 {
+	
     RC            rc;
     RM_FileHandle fh;
 
@@ -535,7 +506,8 @@ RC Test2(void)
 
     printf("\ntest2 done ********************\n");
     
-
+    
     return (0);
-  **/
-}
+
+};
+

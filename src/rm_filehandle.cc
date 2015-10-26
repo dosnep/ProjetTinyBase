@@ -5,8 +5,21 @@ RM_FileHandle :: RM_FileHandle()
 {
 	this->viableFile = false;
 	this->pf = NULL;
-	
+	this->fh.recordSize = -1;
+	this->fh.nbRecordsPerPage = -1;
+	this->fh.nextFreePage = -1;
 };
+
+RM_FileHandle :: RM_FileHandle(const PF_FileHandle &pf, const rm_FileHeader &fh)
+{
+	this->viableFile = true;
+	this->pf = new PF_FileHandle(pf);
+	this->fh.recordSize = fh.recordSize;
+	this->fh.nbRecordsPerPage = fh.nbRecordsPerPage;
+	this->fh.nextFreePage = fh.nextFreePage;
+};
+
+
 
 RM_FileHandle :: ~RM_FileHandle()
 {
@@ -19,29 +32,32 @@ RM_FileHandle :: ~RM_FileHandle()
 RC RM_FileHandle :: GetRec(const RID &rid, RM_Record &rec) const
 {
 	
-int res;
-	
+//On teste si le fichier a bien été ouvert
 	if(!this->viableFile)
 		return RM_FILEHANDLE_NOT_VIABLE;
-		
-rec.SetViableRecord(true);
-rec.SetRid(rid);
+
+int res;	
+//On initialise le rid du rec
+rec.viableRecord = true;
+rec.rid = new RID(rid.pageNum, rid.slotNum);
+rec.recordSize = this->fh.recordSize;
+
 
 //On récupère les coordonnées à partir du rid
 PageNum pageNum;
 SlotNum slotNum;
 
 res = rid.GetPageNum(pageNum);
-if(res !=0)
-{
+	if(res !=0)
+	{
 	return res;
-}
+	}
 
 res = rid.GetSlotNum(slotNum);
-if(res !=0)
-{
+	if(res !=0)
+	{
 	return res;
-}
+	}
 
 
 //On va chercher la bonne page
@@ -56,26 +72,23 @@ res = this->pf->GetThisPage(pageNum,*p);
 	}
 
 char *pData;
-p->GetData(pData);
-pData += sizeof(rm_PageHeader);//On passe le page header
-pData +=slotNum*this->fh.recordSize;//On place le pointeur sur le slot slotNum
-
-res = rec.SetData(pData, this->fh.recordSize);
-
-if(res !=0)
-{
-	delete p;
-	return res;
-}
-
-
-
-res = this->pf->UnpinPage(pageNum);
-
-
+res = p->GetData(pData);
 	if(res != 0)
 	{
-		delete p;
+		delete pData;
+		return res;
+		
+	}
+
+pData += sizeof(rm_PageHeader);//On passe le page header
+pData +=slotNum*this->fh.recordSize;//On place le pointeur sur le slot slotNum
+memcpy(rec.pData, pData, rec.recordSize);
+
+
+//On unpin la page
+res = this->pf->UnpinPage(pageNum);
+	if(res != 0)
+	{
 		return res;
 		
 	}
@@ -86,15 +99,19 @@ return 0;
 RC RM_FileHandle :: InsertRec  (const char *pData, RID &rid)
 {
 	
-int res;
-	
+//On vérifie que le fichier est bien ouvert
 	if(!this->viableFile)
 		return RM_FILEHANDLE_NOT_VIABLE;
-	
-int pageNum = GetNextFreePage();	//On récupère la premiere page libre	
 
-rid.SetViableRid(true);
-rid.SetPageNum(pageNum);
+
+int res;	
+PageNum pageNum;
+res = GetNextFreePage(pageNum);	//On récupère la premiere page libre	
+if(res != 0)
+{	
+	return res;
+}
+
 		
 //On va chercher la bonne page
 PF_PageHandle *page = new PF_PageHandle();
@@ -111,7 +128,7 @@ res = page->GetData(tmp);
 	
 	if(res !=0)
 	{
-		delete page;
+		delete tmp;
 		return res;
 	}
 
@@ -119,17 +136,15 @@ res = page->GetData(tmp);
 rm_PageHeader newPageHeader;
 memcpy(&newPageHeader,tmp,sizeof(rm_PageHeader));
 
+
 //On va chercher dans le bitmap le premier slot libre
 SlotNum freeSlot;
 res = newPageHeader.tab->GetFirstFree(freeSlot);
 	
 	if(res!=0)
 	{
-		delete page;
 		return res;
 	}
-
-rid.SetSlotNum(freeSlot);
 
 tmp += sizeof(rm_PageHeader); //On passe le header
 tmp += freeSlot*sizeof(this->fh.recordSize);//On pointe sur le premier slot libre
@@ -140,12 +155,11 @@ res = newPageHeader.tab->SetSlot(freeSlot,1);
 
 	if(res!=0)
 	{
-		delete page;
 		return res;
 	}	
 //On test si la page est pleine à partir du bitmap
 	if(newPageHeader.tab->IsFull())
-	{
+	{	
 		this->fh.nextFreePage = newPageHeader.nextFreePage; 	//On change la premiere page libre dans le file header
 		newPageHeader.nextFreePage = -1; //On retire notre page de la liste 
 	}
@@ -155,31 +169,69 @@ res = newPageHeader.tab->SetSlot(freeSlot,1);
 res = this->InsertPageHeader(pageNum, newPageHeader);
 	if(res != 0)
 	{
-		delete page;
 		return res;
 	}
 
+//On force l'écriture sur disque
+res = this->pf->ForcePages(pageNum);
+	if(res != 0)
+	{
+	return res;
+	}
+//On marque la page comme unpin
+res = this->pf->UnpinPage(pageNum);
+	if(res != 0)
+	{
+	return res;
+	}
+
+//On initialise le rid
+rid.viableRid = true;
+rid.pageNum = pageNum;
+rid.slotNum = freeSlot;
 
 return 0;
 }; 
 
-//La fonction va tester si la page est plein auquel cas on va l'ajouter aux pages libres
+//La fonction va tester si la page est pleine auquel cas on va l'ajouter aux pages libres
 //le bit du slot concerné sera mît à 0
 RC RM_FileHandle :: DeleteRec(const RID &rid)
 {
+
 //On récupère le numéro de la page et le numéro du slot
+int res;
 PageNum pageNum;
 SlotNum slotNum;
-rid.GetPageNum(pageNum);
-rid.GetSlotNum(slotNum);
+res = rid.GetPageNum(pageNum);
+	if(res != 0)
+	{
+	return res;
+	}
+	
+res = rid.GetSlotNum(slotNum);
+	if(res != 0)
+	{
+	return res;
+	}
 
 //On va chercher la page correspondante
 PF_PageHandle *page = new PF_PageHandle();
-this->pf->GetThisPage(pageNum, *page);
+res = this->pf->GetThisPage(pageNum, *page);
+	if(res != 0)
+	{
+	delete page;
+	return res;
+	}
 
 //On récupère les données de la page
 char *pData;
-page->GetData(pData);
+res = page->GetData(pData);
+	if(res != 0)
+	{
+	delete pData;
+	return res;
+	}
+
 
 //On copie le pageHeader
 rm_PageHeader pageHeader;
@@ -196,14 +248,32 @@ if(pageHeader.tab->IsFull())
 
 
 //On change le bit du slot slotNum à 0
-pageHeader.tab->SetSlot(slotNum,0);
+res = pageHeader.tab->SetSlot(slotNum,0);
+	if(res != 0)
+	{
+	return res;
+	}
 
 //On recopie le header dans la page
-this->InsertPageHeader(pageNum, pageHeader);
+res = this->InsertPageHeader(pageNum, pageHeader);
+	if(res != 0)
+	{
+	return res;
+	}
 
-this->pf->MarkDirty(pageNum);
-this->pf->UnpinPage(pageNum);
-	
+//On force l'enregistrement
+res = this->pf->ForcePages(pageNum);
+	if(res != 0)
+	{
+	return res;
+	}
+
+//On unpin la page
+res = this->pf->UnpinPage(pageNum);
+	if(res != 0)
+	{
+	return res;
+	}	
 	
 return 0;
 };
@@ -211,33 +281,70 @@ return 0;
 
 RC RM_FileHandle :: UpdateRec(const RM_Record &rec)
 {
+int res;
 //On récupère les coordonnées de l'enregistrement
 PageNum pageNum;
 SlotNum slotNum;
 RID *rid = new RID();
-rec.GetRid(*rid);
-rid->GetPageNum(pageNum);
-rid->GetSlotNum(slotNum);
+res = rec.GetRid(*rid);
+	if(res != 0)
+	{
+	delete rid;
+	return res;	
+	}
+res = rid->GetPageNum(pageNum);
+	if(res != 0)
+	{
+	return res;	
+	}
+res = rid->GetSlotNum(slotNum);
+	if(res != 0)
+	{
+	return res;	
+	}
 
 //On va chercher la page correspondante
 PF_PageHandle *page = new PF_PageHandle();
-this->pf->GetThisPage(pageNum, *page);
+res = this->pf->GetThisPage(pageNum, *page);
+	if(res != 0)
+	{
+	delete page;
+	return res;	
+	}
 
 //On récupère les données de la page
 char *pData;
-page->GetData(pData);
-
+res = page->GetData(pData);
+	if(res != 0)
+	{
+	delete pData;
+	return res;	
+	}
 //On pointe vers le slot slotNum
 pData += sizeof(rm_PageHeader); //On passe le header
 pData += slotNum*this->fh.recordSize;
 
 //On stocke les données
 char *newData;
-rec.GetData(newData);
+res = rec.GetData(newData);
+if(res != 0)
+{
+delete newData;
+return res;	
+}
+
 memcpy(pData, newData, this->fh.recordSize);
 
-this->pf->MarkDirty(pageNum);
-this->pf->UnpinPage(pageNum);
+res = this->pf->ForcePages(pageNum);
+	if(res != 0)
+	{
+	return res;	
+	}
+res = this->pf->UnpinPage(pageNum);
+	if(res != 0)
+	{
+	return res;	
+	}
 
 return 0;
 };
@@ -258,54 +365,72 @@ RC RM_FileHandle :: ForcePages (PageNum pageNum)
 
 //Renvoie le numéro de la première page libre.
 //Si elle n'existe pas on en alloue une nouvelle et on renvoit son numéro
-PageNum RM_FileHandle :: GetNextFreePage()
+RC RM_FileHandle :: GetNextFreePage(PageNum &pageNum)
 {
 
+//On teste si le fichier a bien été ouvert
 	if(!this->viableFile)
 		return RM_FILEHANDLE_NOT_VIABLE;	
 	
-	
-	
-	int res;
-	
-	if(this->fh.nextFreePage != -1)	//Si le file header pointe vers une page libre alors on la retourne
+int res;
+
+//Si le file header pointe vers une page libre alors on la retourne	
+	if(this->fh.nextFreePage != -1)	
 	{
-			return this->fh.nextFreePage;
+			pageNum = this->fh.nextFreePage;
+			return 0;
 	}
 	
-	//Sinon on va devoir allouer une nouvelle page
-	PF_PageHandle *newPage = new PF_PageHandle();
-	
-	res = this->pf->AllocatePage(*newPage);
+//Sinon on va devoir allouer une nouvelle page
+PF_PageHandle *newPage = new PF_PageHandle();
+res = this->pf->AllocatePage(*newPage);
 	if(res!=0)
 	{
 		delete newPage;
 		return res;
 	}
-	//On va rajouter un pageheader dans la nouvelle page
-	//On initialise le nouveau page header
-	rm_PageHeader newPageHeader;
-	newPageHeader.nextFreePage = -1;
-	newPageHeader.tab = new Bitmap(this->fh.nbRecordsPerPage);
-		
-	PageNum numNewPage;
-	res = newPage->GetPageNum(numNewPage);
+	
+//On va rajouter un pageheader dans la nouvelle page
+//On initialise le nouveau page header
+rm_PageHeader newPageHeader;
+newPageHeader.nextFreePage = -1;
+newPageHeader.tab = new Bitmap(this->fh.nbRecordsPerPage);
+PageNum numNewPage;
+res = newPage->GetPageNum(numNewPage);
 	if(res !=0)
 	{
-		delete newPage;
 		return res;
 	}
 	
-	//On insère le page header dans la page
-	res = this->InsertPageHeader(numNewPage, newPageHeader);
+//On insère le page header dans la page
+res = this->InsertPageHeader(numNewPage, newPageHeader);
+	if(res != 0)
+	{
+		return res;
+	}
+	
+	
+//On force l'écriture de la nouvelle page
+res = this->pf->ForcePages(numNewPage);
+	if(res != 0)
+	{
+		return res;
+	}
+	
+//On unpin la page
+res = this->pf->UnpinPage(numNewPage);
 	
 	if(res != 0)
 	{
-		delete newPage;
 		return res;
 	}
+
+	pageNum = numNewPage;
 	
-	return numNewPage;
+//On oublie pas de modifier le pointeur du file header
+this->fh.nextFreePage = numNewPage;
+
+	return 0;
 }
 
 //La fonction récupère les data de la page pageNum et y insère le header pageHeader
@@ -314,8 +439,8 @@ RC RM_FileHandle :: InsertPageHeader(const PageNum &pageNum, const rm_PageHeader
 
 int res;	
 
-//On récupère la page
-PF_PageHandle *newPage = new PF_PageHandle();
+
+PF_PageHandle *newPage = new PF_PageHandle();//On récupère la page
 res = this->pf->GetThisPage(pageNum,*newPage);
 if(res !=0)
 {
@@ -329,54 +454,24 @@ char *pData;
 res = newPage->GetData(pData); //On récupère les données
 if(res !=0)
 {
-	delete newPage;
+	delete pData;
 	return res;
 }
 
 memcpy(pData, &pageHeader, sizeof(rm_PageHeader)); //On copie le pageheader en début de page
-res = this->pf->MarkDirty(pageNum);
+
+res = this->pf->ForcePages(pageNum); //On marque les données en dirty
 if(res !=0)
 {
-	delete newPage;
 	return res;
 }
 
-res = this->pf->UnpinPage(pageNum);
+res = this->pf->UnpinPage(pageNum);	//On marque la page page comme unpin
 if(res !=0)
 {
-	delete newPage;
 	return res;
 }
 	
 return 0;
 }
-
-
-
-
-RC RM_FileHandle :: SetViableFile(const bool &cond)
-{
-	this->viableFile = cond;
-	return 0;
-};
-
-RC RM_FileHandle :: SetPf(const PF_FileHandle *pf)
-{
-	if(!this->viableFile)
-		return RM_FILEHANDLE_NOT_VIABLE;
-		
-	*this->pf = *pf;
-	return 0;
-};
-
-RC RM_FileHandle :: SetFh(const rm_FileHeader &fh)
-{
-	if(!this->viableFile)
-		return RM_FILEHANDLE_NOT_VIABLE;
-
-	this->fh.recordSize = fh.recordSize;
-	this->fh.nbRecordsPerPage = fh.nbRecordsPerPage;
-	this->fh.nextFreePage = fh.nextFreePage;
-	return 0;
-};
 

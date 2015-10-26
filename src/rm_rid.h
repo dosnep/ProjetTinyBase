@@ -29,10 +29,8 @@ typedef int SlotNum;
 class RID {
 public:
     RID();                                         // Default constructor
-    RID(PageNum pageNum, SlotNum slotNum);
+    RID(const PageNum &pageNum, const SlotNum &slotNum);
     ~RID();                                        // Destructor
-
-    RID& operator=(const RID &rid);
 
 
 	//getter
@@ -40,15 +38,13 @@ public:
     RC GetSlotNum(SlotNum &slotNum) const;         // Return slot number
 
 
-	//setter
-	RC SetPageNum(const PageNum &pageNum); 			// Set this->pageNum
-	RC SetSlotNum(const SlotNum &slotNum);			// Set this->slotNum
-	RC SetViableRid(const bool cond);				// Set this->viableRid
-	
 private:
-PageNum pageNum; // Numéro associé à la page
-SlotNum slotNum; //Slot associé à l'enregistrement
-bool viableRid;	//true si le RID a était initialisé, false sinon
+	PageNum pageNum; // Numéro associé à la page
+	SlotNum slotNum; //Slot associé à l'enregistrement
+	bool viableRid;	//true si le RID a était initialisé, false sinon
+	
+friend class RM_Record;
+friend class RM_FileHandle;
 };
 
 #endif

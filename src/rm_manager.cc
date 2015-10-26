@@ -3,9 +3,8 @@
 #include <cstring>
 
 
-RM_Manager :: RM_Manager(PF_Manager &pfm)
+RM_Manager :: RM_Manager(PF_Manager &pfm) : pfm(pfm)
 {
-*this->pfm = pfm;
 };
 
 RM_Manager :: ~RM_Manager()
@@ -16,7 +15,7 @@ RC RM_Manager :: CreateFile(const char *fileName, int recordSize)
 {
 int res;
 
-res = this->pfm->CreateFile(fileName); 
+res = this->pfm.CreateFile(fileName); 
 
 if(res != 0)
 {
@@ -25,20 +24,39 @@ if(res != 0)
 
 
 PF_FileHandle * file = new PF_FileHandle();
-this->pfm->OpenFile(fileName,*file); //On ouvre le fichier fileName
+res = this->pfm.OpenFile(fileName,*file); //On ouvre le fichier fileName
+	if(res != 0)
+	{
+		return res;
+	}
+
 PF_PageHandle *firstPage = new PF_PageHandle();
-file->AllocatePage(*firstPage);//On alloue une première page pour le file header
+res = file->AllocatePage(*firstPage);//On alloue une première page pour le file header
+	if(res != 0)
+	{
+		return res;
+	}
+
 char *pData;
-firstPage->GetData(pData); //On récupère les données de la page
+res = firstPage->GetData(pData); //On récupère les données de la page
+	if(res != 0)
+	{
+		return res;
+	}
+
 
 //On initialise un nouveau file header
 rm_FileHeader newFileHeader;
 newFileHeader.nextFreePage = -1; //Pour le moment nous n'avons pas d'autre pages
 newFileHeader.recordSize = recordSize;
-newFileHeader.nbRecordsPerPage = PF_PAGE_SIZE-sizeof(rm_PageHeader)/recordSize;
+newFileHeader.nbRecordsPerPage = 3;	// 3 est pour tester plusieurs enregistrements par page
+								//(PF_PAGE_SIZE-sizeof(rm_FileHeader))/(recordSize-sizeof(rm_PageHeader));
+
+memcpy(pData, &newFileHeader, sizeof(rm_FileHeader));
 
 
-	
+file->ForcePages(0);
+file->UnpinPage(0);
 	
 return 0;
 }
@@ -48,7 +66,7 @@ RC RM_Manager :: DestroyFile(const char *fileName)
 {
 int res;
 
-res = this->pfm->DestroyFile(fileName);
+res = this->pfm.DestroyFile(fileName);
 
 if(res !=0)
 {
@@ -61,32 +79,49 @@ return 0;
 
 RC RM_Manager :: OpenFile(const char *fileName, RM_FileHandle &fileHandle)
 {
+int res;
 
 //On ouvre le fichier
 PF_FileHandle *pf = new PF_FileHandle();
-this->pfm->OpenFile(fileName, *pf);
+res = this->pfm.OpenFile(fileName, *pf);
+	if(res !=0)
+	{
+	delete pf;
+	return res;
+	}
+
 
 //On passe le fichier au RM_FileHandle
-fileHandle.SetViableFile(true);
-fileHandle.SetPf(pf);
+fileHandle.viableFile = true;
+fileHandle.pf = new PF_FileHandle(*pf);
 
 //On récupère le file header
 PF_PageHandle *page = new PF_PageHandle();
-pf->GetThisPage(0,*page);
+res = pf->GetThisPage(0,*page);
+	if(res !=0)
+	{
+	delete page;
+	return res;
+	}
+
 char *pData;
-page->GetData(pData);
+res = page->GetData(pData);
+	if(res !=0)
+	{
+	delete pData;
+	return res;
+	}
+
 
 //On passe le file header au RM_FileHandle
 rm_FileHeader fh;
 memcpy(&fh, pData, sizeof(rm_FileHeader)); 
-fileHandle.SetFh(fh);
+fileHandle.fh = fh;
 
 //On unpin le file header
-pf->UnpinPage(0);
-
-
-
-
+res = pf->UnpinPage(0);
+	if(res !=0)
+	{return res;}
 
 return 0;
 };
@@ -94,25 +129,40 @@ return 0;
 
 RC RM_Manager :: CloseFile(RM_FileHandle &fileHandle)
 {
+int res;
 	
 //On charge le file header du fichier
 PF_PageHandle *page = new PF_PageHandle();
-fileHandle.pf->GetThisPage(0,*page);
+res = fileHandle.pf->GetThisPage(0,*page);
+	if(res !=0)
+	{
+	delete page;
+	return res;
+	}
 
 //On récupère les données du file header
 char *pData;
-page->GetData(pData);
+res = page->GetData(pData);
+	if(res !=0)
+	{
+	delete pData;
+	return res;
+	}
 
 //On copie les modifications du file header à l'intérieur du fichier
 memcpy(pData, &fileHandle.fh,sizeof(rm_FileHeader));
 
 //On marque les données en sales et on unpin le file header
-fileHandle.pf->MarkDirty(0);
-fileHandle.pf->UnpinPage(0);
-
+res = fileHandle.pf->MarkDirty(0);
+	if(res !=0)
+	{return res;}
+res = fileHandle.pf->UnpinPage(0);
+	if(res !=0)
+	{return res;}
 //On ferme le fichier
-this->pfm->CloseFile(*fileHandle.pf);
-
+res = this->pfm.CloseFile(*fileHandle.pf);
+	if(res !=0)
+	{return res;}
 	
 return 0;
 };

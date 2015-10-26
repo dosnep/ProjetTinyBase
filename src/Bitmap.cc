@@ -4,6 +4,12 @@ Bitmap :: Bitmap(int taille)
 {
 	this->taille = taille;
 	this->tabBitmap = new int[taille];
+	int i;
+	for(i = 0; i<taille;i++)
+	{
+		this->tabBitmap[i] = 0;
+	}
+	
 };
 
 Bitmap :: ~Bitmap()
@@ -22,8 +28,7 @@ bool Bitmap :: IsFull()
 	{
 		if(this->tabBitmap[i] == 1)
 			compt++;
-		
-		
+	
 	}
 	
 	if(compt!=this->taille)	//On teste si le nb de bits à 1 est le même que la taille du bitmap

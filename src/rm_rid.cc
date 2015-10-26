@@ -10,7 +10,7 @@ RID :: RID()
 };
 
 //constructeur avec arguments
-RID :: RID(PageNum pageNum, SlotNum slotNum)
+RID :: RID(const PageNum &pageNum, const SlotNum &slotNum)
 {
 	this->pageNum = pageNum;
 	this->slotNum = slotNum;
@@ -23,17 +23,6 @@ RID :: ~RID()
 {
 	
 };
-
-//*this = rid
-RID& RID :: operator=(const RID &rid)
-{
-	this->pageNum = rid.pageNum;
-	this->slotNum = rid.slotNum;
-	this->viableRid = rid.viableRid;
-		
-	return *this;
-};
-
 
 
 
@@ -62,33 +51,4 @@ RC RID :: GetSlotNum(SlotNum &slotNum) const
 slotNum = this->slotNum;	
 return 0;
 };
-
-///////SETTER
-//Pour cette fonction et la suivante nous vérifions que le fichier a bien été chargé par RM_RECORD :: GetRid()
-RC RID :: SetPageNum(const PageNum &pageNum)
-{
-if(!this->viableRid)
-{
-	return RM_RID_NOT_VIABLE;
-}
-this->pageNum = pageNum;
-return 0;
-};
-
-RC RID :: SetSlotNum(const SlotNum &slotNum)
-{
-if(!this->viableRid)
-{
-	return RM_RID_NOT_VIABLE;
-}
-
-this->slotNum = slotNum;
-return 0;
-}
-
-RC RID :: SetViableRid(const bool cond)
-{
-this->viableRid = cond;
-return 0;
-}
 

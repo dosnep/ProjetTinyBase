@@ -44,6 +44,7 @@ class Bitmap{
 	private:
 	int *tabBitmap;
 	int taille;
+	friend class RM_FileHandle;
 	
 };
 
@@ -63,6 +64,7 @@ struct rm_pageheader{
 class RM_Record {
 public:
     RM_Record ();
+    RM_Record(const PageNum &pageNum, const SlotNum &slotNum, const char* pData, const int &recordSize);
     ~RM_Record();
 	
 	//getter
@@ -73,16 +75,14 @@ public:
     // Return the RID associated with the record
     RC GetRid (RID &rid) const;
  
-	//setter
-	RC SetData(const char *pData, const int recordSize);
-	RC SetRid(const RID &rid);
-	RC SetViableRecord(const bool cond);
  
 private:
-char *pData; //Données de l'enregistrement
-RID *rid; //Coordonnées RID de l'enregistrement
-bool viableRecord; //Test si l'enregistrement a été chargé avec rm_filescan ou rm_filehandle 
-int recordSize;	//Taille de l'enregistrement;
+	char *pData; //Données de l'enregistrement
+	RID *rid; //Coordonnées RID de l'enregistrement
+	bool viableRecord; //Test si l'enregistrement a été chargé avec rm_filescan ou rm_filehandle 
+	int recordSize;	//Taille de l'enregistrement;
+   
+friend class RM_FileHandle;
    
 };
 
@@ -92,6 +92,7 @@ int recordSize;	//Taille de l'enregistrement;
 class RM_FileHandle {
 public:
     RM_FileHandle ();
+	RM_FileHandle(const PF_FileHandle &pf, const rm_FileHeader &fh);
     ~RM_FileHandle();
 
     // Given a RID, return the record
@@ -107,14 +108,8 @@ public:
     RC ForcePages (PageNum pageNum = ALL_PAGES);
 
 	RC InsertPageHeader(const PageNum &pagenum, const rm_PageHeader &pageHeader);
-	PageNum GetNextFreePage(); //Retourne la première page où il y a des slots de libres
+	RC GetNextFreePage(PageNum &pageNum); //pageNum prend la première page où il y a des slots de libres
 	
-
-	//setter
-	RC SetViableFile(const bool &cond);
-	RC SetPf(const PF_FileHandle *pf);
-	RC SetFh(const rm_FileHeader &fh);
-
 
 private :
 
@@ -161,7 +156,7 @@ public:
     RC CloseFile  (RM_FileHandle &fileHandle);
     
 private:
-PF_Manager *pfm;
+PF_Manager& pfm;
   
 };
 
