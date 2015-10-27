@@ -39,7 +39,9 @@ class Bitmap{
 	~Bitmap();
 	bool IsFull(); //Teste si tout les bits sont à 1
 	RC GetFirstFree(SlotNum &slotnum) ; //Retourne le premier slot où le bit est à 0
+	RC GetNextSlot(const SlotNum &currentSlotNum,SlotNum &NextslotNum); //Retourne le prochaine slot occupé à partir du slot courrant
 	RC SetSlot(const SlotNum &slotnum,const int &value);//Initialise le bit de slotnum à value
+	
 	
 	private:
 	int *tabBitmap;
@@ -118,6 +120,7 @@ bool viableFile; //bool qui teste si le fichier a été ouvert
 rm_FileHeader fh;	//FileHeader propre au fichier chargé
 
 friend class RM_Manager;
+friend class RM_FileScan;
 
 
 };
@@ -139,6 +142,19 @@ public:
                   ClientHint pinHint = NO_HINT); // Initialize a file scan
     RC GetNextRec(RM_Record &rec);               // Get next matching record
     RC CloseScan ();                             // Close the scan
+    bool EstUnBonRecord(char *pData);
+
+private:
+RM_FileHandle *rfh;
+bool scanOpen;
+AttrType   attrType;
+int        attrLength;
+int        attrOffset;
+CompOp     compOp;
+int valInt;
+float valFloat;
+char *valString;
+PageNum currentPage;
 };
 
 //
@@ -167,5 +183,7 @@ void RM_PrintError(RC rc);
 
 #define RM_RECORD_NOT_VIABLE 2;
 #define BITMAP_NO_FREE_SLOT 3;
+#define BITMAP_EOF 5;
+#define BITMAP_NO_NEXT_SLOT 6;
 #define RM_FILEHANDLE_NOT_VIABLE 4;
 #endif

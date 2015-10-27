@@ -59,6 +59,27 @@ RC Bitmap :: GetFirstFree(SlotNum &slotnum)
 	return 0;
 };
 
+RC Bitmap :: GetNextSlot(const SlotNum &currentSlotNum,SlotNum &nextSlotNum)
+{
+	//ON teste si nous sommes à la fin du bitmap
+	if(currentSlotNum == this->taille-1)
+		return BITMAP_EOF;
+	
+	//On parcours le bitmap et on cherche le prochain slot occupé
+	int i;
+	for(i = currentSlotNum+1; i<this->taille; i++)
+	{
+		if(this->tabBitmap[i] == 1);
+		{
+			nextSlotNum = i;
+			return 0;
+		}
+	}
+	
+	//Si nous n'avons pas trouvé de slot
+	return BITMAP_NO_NEXT_SLOT;
+};
+
 //le bit du slot slotNum prend la valeur value
 RC Bitmap :: SetSlot(const SlotNum &slotNum, const int &value)
 {
