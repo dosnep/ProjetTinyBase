@@ -45,6 +45,7 @@ private:
 	
 friend class RM_Record;
 friend class RM_FileHandle;
+friend class RM_FileScan;
 };
 
 #endif

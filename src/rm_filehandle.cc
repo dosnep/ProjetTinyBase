@@ -36,62 +36,26 @@ RC RM_FileHandle :: GetRec(const RID &rid, RM_Record &rec) const
 	if(!this->viableFile)
 		return RM_FILEHANDLE_NOT_VIABLE;
 
-int res;	
-//On initialise le rid du rec
+rec.rid = new RID(rid.pageNum,rid.slotNum);
 rec.viableRecord = true;
-rec.rid = new RID(rid.pageNum, rid.slotNum);
 rec.recordSize = this->fh.recordSize;
-
-
-//On récupère les coordonnées à partir du rid
-PageNum pageNum;
-SlotNum slotNum;
-
-res = rid.GetPageNum(pageNum);
-	if(res !=0)
-	{
-	return res;
-	}
-
-res = rid.GetSlotNum(slotNum);
-	if(res !=0)
-	{
-	return res;
-	}
-
-
-//On va chercher la bonne page
-PF_PageHandle *p = new PF_PageHandle();
-res = this->pf->GetThisPage(pageNum,*p);
-
-	if(res != 0)
-	{
-		delete p;
-		return res;
+	
+	//ON commence par récupérer la page courante
+	PF_PageHandle *page= new PF_PageHandle();
+	int res;
+	res = this->pf->GetThisPage(rec.rid->pageNum,*page);
+		if(res !=0)
+		{
+			delete page;
+			return res;
+		}
 		
-	}
-
-char *pData;
-res = p->GetData(pData);
-	if(res != 0)
-	{
-		delete pData;
-		return res;
-		
-	}
-
-pData += sizeof(rm_PageHeader);//On passe le page header
-pData +=slotNum*this->fh.recordSize;//On place le pointeur sur le slot slotNum
-memcpy(rec.pData, pData, rec.recordSize);
-
-
-//On unpin la page
-res = this->pf->UnpinPage(pageNum);
-	if(res != 0)
-	{
-		return res;
-		
-	}
+	//On récupère les données de la page
+	char *pData;
+	page->GetData(pData);
+	pData += sizeof(rm_PageHeader)+rec.rid->slotNum*sizeof(this->fh.recordSize);
+	rec.pData = new char[this->fh.recordSize];
+	memcpy(rec.pData, pData, sizeof(this->fh.recordSize));
 
 return 0;	
 }

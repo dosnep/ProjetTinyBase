@@ -85,6 +85,7 @@ private:
 	int recordSize;	//Taille de l'enregistrement;
    
 friend class RM_FileHandle;
+friend class RM_FileScan;
    
 };
 
@@ -155,6 +156,8 @@ int valInt;
 float valFloat;
 char *valString;
 PageNum currentPage;
+SlotNum currentSlot;
+void *value;
 };
 
 //
@@ -186,4 +189,5 @@ void RM_PrintError(RC rc);
 #define BITMAP_EOF 5;
 #define BITMAP_NO_NEXT_SLOT 6;
 #define RM_FILEHANDLE_NOT_VIABLE 4;
+
 #endif

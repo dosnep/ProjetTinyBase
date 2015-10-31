@@ -43,7 +43,8 @@ RC RM_Record :: GetData(char *&pData) const
 		return RM_RECORD_NOT_VIABLE;
 	}
 
-	memcpy(pData, this->pData, this->recordSize);
+	//memcpy(pData, this->pData, this->recordSize);
+	pData = this->pData;
 	return 0;
 };
 

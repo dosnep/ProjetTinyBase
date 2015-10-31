@@ -50,6 +50,7 @@ struct TestRec {
     char  str[STRLEN];
     int   num;
     float r;
+ 
 };
 
 //
@@ -243,7 +244,7 @@ RC AddRecs(RM_FileHandle &fh, int numRecs)
     // Return ok
     return (0);
 }
-/**
+
 //
 // VerifyFile
 //
@@ -264,12 +265,11 @@ RC VerifyFile(RM_FileHandle &fh, int numRecs)
     memset(found, 0, numRecs);
 
     printf("\nverifying file contents\n");
-
     RM_FileScan fs;
-    if ((rc=fs.OpenScan(fh,INT,sizeof(int),offsetof(TestRec, num),
-                        NO_OP, NULL, NO_HINT)))
+    if ((rc=fs.OpenScan(fh,INT,sizeof(int),offsetof(TestRec, num), NO_OP, NULL, NO_HINT)))
         return (rc);
-
+        
+	
     // For each record in the file
     for (rc = GetNextRecScan(fs, rec), n = 0;
          rc == 0;
@@ -286,8 +286,8 @@ RC VerifyFile(RM_FileHandle &fh, int numRecs)
         if (pRecBuf->num < 0 || pRecBuf->num >= numRecs ||
             strcmp(pRecBuf->str, stringBuf) ||
             pRecBuf->r != (float)pRecBuf->num) {
-            printf("VerifyFile: invalid record = [%s, %d, %f]\n",
-                   pRecBuf->str, pRecBuf->num, pRecBuf->r);
+            printf("VerifyFile: invalid record = [%s,%d, %f]\n",
+                   pRecBuf->str,pRecBuf->num, pRecBuf->r);
             exit(1);
         }
 
@@ -298,10 +298,11 @@ RC VerifyFile(RM_FileHandle &fh, int numRecs)
         }
 
         found[pRecBuf->num] = 1;
+     
     }
 
-    if (rc != RM_EOF)
-      goto err;
+    //if (rc != RM_EOF)
+      //goto err;
 
     if ((rc=fs.CloseScan()))
         return (rc);
@@ -320,6 +321,7 @@ err:
     fs.CloseScan();
     delete[] found;
     return (rc);
+   
 }
 
 //
@@ -351,15 +353,15 @@ RC PrintFile(RM_FileScan &fs)
         PrintRecord(*pRecBuf);
     }
 
-    if (rc != RM_EOF)
-        return (rc);
+    //if (rc != RM_EOF)
+        //return (rc);
 
     printf("%d records found\n", n);
 
     // Return ok
     return (0);
 }
-**/
+
 ////////////////////////////////////////////////////////////////////////
 // The following functions are wrappers for some of the RM component  //
 // methods.  They give you an opportunity to add debugging statements //
@@ -446,12 +448,13 @@ RC UpdateRec(RM_FileHandle &fh, RM_Record &rec)
 //
 // Desc: call RM_FileScan::GetNextRec
 //
-/**
+
+
 RC GetNextRecScan(RM_FileScan &fs, RM_Record &rec)
 {
     return (fs.GetNextRec(rec));
 }
-**/
+
 /////////////////////////////////////////////////////////////////////
 // Sample test functions follow.                                   //
 /////////////////////////////////////////////////////////////////////
@@ -496,6 +499,7 @@ RC Test2(void)
     if ((rc = CreateFile(FILENAME, sizeof(TestRec))) ||
         (rc = OpenFile(FILENAME, fh)) ||
         (rc = AddRecs(fh, FEW_RECS)) ||
+        (rc = VerifyFile(fh, FEW_RECS)) || 
         (rc = CloseFile(FILENAME, fh)))
         return (rc);
 
