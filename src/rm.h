@@ -43,7 +43,7 @@ class Bitmap{
 	RC SetSlot(const SlotNum &slotnum,const int &value);//Initialise le bit de slotnum à value
 	
 	
-	private:
+	public:
 	int *tabBitmap;
 	int taille;
 	friend class RM_FileHandle;
@@ -158,6 +158,7 @@ char *valString;
 PageNum currentPage;
 SlotNum currentSlot;
 void *value;
+PageNum numLastPage;
 };
 
 //

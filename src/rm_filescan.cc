@@ -33,6 +33,8 @@ this->attrOffset = attrOffset;
 this->compOp = compOp;
 this->value = value;
 
+
+
 //On teste si l'attribut du fichier est de type string, int ou float et on assigne la value dans son bon type
 if(value != NULL){
 switch(attrType){
@@ -73,7 +75,23 @@ res = tmpPage->GetPageNum(this->currentPage);
 		return res;
 	}
 
-currentSlot = 0;
+this->currentSlot = -1;
+
+
+//On récupère le numéro de la dernière page
+res = this->rfh->pf->GetLastPage(*tmpPage);
+	if(res !=0)
+	{
+		delete tmpPage;
+		return res;
+	}
+res = tmpPage->GetPageNum(this->numLastPage);
+		if(res !=0)
+	{
+		return res;
+	}
+
+
 
 this->rfh->pf->UnpinPage(currentPage);
 return 0;	
@@ -82,7 +100,7 @@ return 0;
 
 RC RM_FileScan :: GetNextRec(RM_Record &rec)
 {
-	/**
+
 	int res;
 	int resGetSlot;
 	bool goodRecord = false;
@@ -111,16 +129,36 @@ RC RM_FileScan :: GetNextRec(RM_Record &rec)
 	//Tant que l'on a pas trouvé un slot qui ne remplit pas les conditions on charge la page suivante
 	while(!goodRecord)
 	{	
+		//Si on a trouvé un enregistrement alors nous pouvons vérifier s'il remplit les conditions
+		if(resGetSlot == 0)
+		{
+			//Si on a trouvé un slot on change la valeur courante du slot
+			this->currentSlot = nextSlot;
+			goodRecord = EstUnBonRecord(pData);
+
+
+		}
+		
+		else{
+		
+			//Si nous sommes dans la dernière page, impossible d'aller à la suivante
+			if(this->currentPage == this->numLastPage)
+			{
+				return 1;
+			}
+			
+		
 		//On charge la page suivante
 		res = this->rfh->pf->GetNextPage(this->currentPage,*page);
 				if(res != 0)
 					return res;
 		//On met à jour le numéro de page courant
-		res = page->GetPageNum(currentPage);
+		res = page->GetPageNum(this->currentPage);
 				if(res != 0)
 					return res;
-		//On met à 0 le currentSlot car on va repartir du début du bitmap
-		this->currentSlot = 0;
+		//On met à -1 le currentSlot car on va repartir du début du bitmap
+		this->currentSlot = -1
+		;
 		
 		//On récupère les données de la page
 		res = page->GetData(pData);
@@ -133,19 +171,12 @@ RC RM_FileScan :: GetNextRec(RM_Record &rec)
 		//On va chercher un slot 
 		resGetSlot = currentPageHeader.tab->GetNextSlot(this->currentSlot, nextSlot);
 		
-		//Si on a trouvé un enregistrement alors nous pouvons vérifier s'il remplit les conditions
-		if(resGetSlot == 0)
-		{
-			//Si on a trouvé un slot on change la valeur courante du slot
-			this->currentSlot = nextSlot;
-			goodRecord = EstUnBonRecord(pData);
-		
 		}
+
 	}
 
-**/
 
-RID *rid = new RID(2,0);
+RID *rid = new RID(this->currentPage,this->currentSlot);
 this->rfh->GetRec(*rid,rec);
 return 0;	
 };           

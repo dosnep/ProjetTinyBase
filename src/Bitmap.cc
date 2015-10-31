@@ -69,7 +69,8 @@ RC Bitmap :: GetNextSlot(const SlotNum &currentSlotNum,SlotNum &nextSlotNum)
 	int i;
 	for(i = currentSlotNum+1; i<this->taille; i++)
 	{
-		if(this->tabBitmap[i] == 1);
+
+		if(this->tabBitmap[i] == 1)
 		{
 			nextSlotNum = i;
 			return 0;

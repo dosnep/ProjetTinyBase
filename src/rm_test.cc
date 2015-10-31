@@ -219,13 +219,14 @@ RC AddRecs(RM_FileHandle &fh, int numRecs)
     // warnings that Purify will give regarding UMR since sizeof(TestRec)
     // is 40, whereas actual size is 37.
     memset((void *)&recBuf, 0, sizeof(recBuf));
-
     printf("\nadding %d records\n", numRecs);
     for (i = 0; i < numRecs; i++) {
         memset(recBuf.str, ' ', STRLEN);
         sprintf(recBuf.str, "a%d", i);
         recBuf.num = i;
         recBuf.r = (float)i;
+        
+  
         if ((rc = InsertRec(fh, (char *)&recBuf, rid))||
             (rc = rid.GetPageNum(pageNum)) ||
             (rc = rid.GetSlotNum(slotNum)))
@@ -280,6 +281,7 @@ RC VerifyFile(RM_FileHandle &fh, int numRecs)
             (rc = rec.GetRid(rid)))
             goto err;
 
+		PrintRecord(*pRecBuf);
         memset(stringBuf,' ', STRLEN);
         sprintf(stringBuf, "a%d", pRecBuf->num);
 
@@ -298,7 +300,7 @@ RC VerifyFile(RM_FileHandle &fh, int numRecs)
         }
 
         found[pRecBuf->num] = 1;
-     
+
     }
 
     //if (rc != RM_EOF)

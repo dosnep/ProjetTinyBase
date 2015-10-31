@@ -53,9 +53,9 @@ rec.recordSize = this->fh.recordSize;
 	//On récupère les données de la page
 	char *pData;
 	page->GetData(pData);
-	pData += sizeof(rm_PageHeader)+rec.rid->slotNum*sizeof(this->fh.recordSize);
+	pData += sizeof(rm_PageHeader)+rec.rid->slotNum*this->fh.recordSize;
 	rec.pData = new char[this->fh.recordSize];
-	memcpy(rec.pData, pData, sizeof(this->fh.recordSize));
+	memcpy(rec.pData, pData, this->fh.recordSize);
 
 return 0;	
 }
@@ -111,8 +111,8 @@ res = newPageHeader.tab->GetFirstFree(freeSlot);
 	}
 
 tmp += sizeof(rm_PageHeader); //On passe le header
-tmp += freeSlot*sizeof(this->fh.recordSize);//On pointe sur le premier slot libre
-memcpy(tmp, pData, sizeof(this->fh.recordSize));
+tmp += freeSlot*this->fh.recordSize;//On pointe sur le premier slot libre
+memcpy(tmp, pData, this->fh.recordSize);
 
 //On va maintenant mettre le bit du slot utilisé à 1
 res = newPageHeader.tab->SetSlot(freeSlot,1);
