@@ -20,7 +20,6 @@ RM_FileHandle :: RM_FileHandle(const PF_FileHandle &pf, const rm_FileHeader &fh)
 };
 
 
-
 RM_FileHandle :: ~RM_FileHandle()
 {
 	delete this->pf;
@@ -35,6 +34,7 @@ RC RM_FileHandle :: GetRec(const RID &rid, RM_Record &rec) const
 //On teste si le fichier a bien été ouvert
 	if(!this->viableFile)
 		return RM_FILEHANDLE_NOT_VIABLE;
+
 
 rec.rid = new RID(rid.pageNum,rid.slotNum);
 rec.viableRecord = true;
@@ -54,12 +54,15 @@ rec.recordSize = this->fh.recordSize;
 	char *pData;
 	page->GetData(pData);
 	pData += sizeof(rm_PageHeader)+rec.rid->slotNum*this->fh.recordSize;
+	
+	//On copie les données dans le record
 	rec.pData = new char[this->fh.recordSize];
 	memcpy(rec.pData, pData, this->fh.recordSize);
 
 return 0;	
 }
 
+//Insère un enregistrement, retourne l'emplacement (rid) où il est stocké
 RC RM_FileHandle :: InsertRec  (const char *pData, RID &rid)
 {
 	
@@ -129,7 +132,6 @@ res = newPageHeader.tab->SetSlot(freeSlot,1);
 	}
 	
 //Il faut maintenant réécrire le page header dans le fichier
-
 res = this->InsertPageHeader(pageNum, newPageHeader);
 	if(res != 0)
 	{
@@ -195,7 +197,6 @@ res = page->GetData(pData);
 	delete pData;
 	return res;
 	}
-
 
 //On copie le pageHeader
 rm_PageHeader pageHeader;

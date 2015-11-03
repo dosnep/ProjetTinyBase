@@ -22,6 +22,7 @@
 #include "rm_rid.h"
 #include "pf.h"
 
+//Structure représentant le header du fichier
 typedef struct rm_fileheader rm_FileHeader;
 struct rm_fileheader{
 	int recordSize;	//Taille d'un enregistrement
@@ -39,7 +40,7 @@ class Bitmap{
 	~Bitmap();
 	bool IsFull(); //Teste si tout les bits sont à 1
 	RC GetFirstFree(SlotNum &slotnum) ; //Retourne le premier slot où le bit est à 0
-	RC GetNextSlot(const SlotNum &currentSlotNum,SlotNum &NextslotNum); //Retourne le prochaine slot occupé à partir du slot courrant
+	RC GetNextSlot(const SlotNum &currentSlotNum,SlotNum &NextslotNum); //Retourne le prochaine slot occupé à partir du slot courrant+1
 	RC SetSlot(const SlotNum &slotnum,const int &value);//Initialise le bit de slotnum à value
 	
 	
@@ -50,7 +51,7 @@ class Bitmap{
 	
 };
 
-
+//Structure représentant le header d'une page
 typedef struct rm_pageheader rm_PageHeader;
 struct rm_pageheader{
 	
@@ -110,7 +111,7 @@ public:
     // from the buffer pool to disk.  Default value forces all pages.
     RC ForcePages (PageNum pageNum = ALL_PAGES);
 
-	RC InsertPageHeader(const PageNum &pagenum, const rm_PageHeader &pageHeader);
+	RC InsertPageHeader(const PageNum &pagenum, const rm_PageHeader &pageHeader); //insère un header dans une page donné
 	RC GetNextFreePage(PageNum &pageNum); //pageNum prend la première page où il y a des slots de libres
 	
 
@@ -143,7 +144,7 @@ public:
                   ClientHint pinHint = NO_HINT); // Initialize a file scan
     RC GetNextRec(RM_Record &rec);               // Get next matching record
     RC CloseScan ();                             // Close the scan
-    bool EstUnBonRecord(char *pData);
+    bool EstUnBonRecord(char *pData);			//Teste si les données en argument sont acceptables
 
 private:
 RM_FileHandle *rfh;
@@ -190,5 +191,6 @@ void RM_PrintError(RC rc);
 #define BITMAP_EOF 5;
 #define BITMAP_NO_NEXT_SLOT 6;
 #define RM_FILEHANDLE_NOT_VIABLE 4;
+#define RM_EOF 1;
 
 #endif

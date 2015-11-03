@@ -144,7 +144,7 @@ RC RM_FileScan :: GetNextRec(RM_Record &rec)
 			//Si nous sommes dans la dernière page, impossible d'aller à la suivante
 			if(this->currentPage == this->numLastPage)
 			{
-				return 1;
+				return RM_EOF;
 			}
 			
 		

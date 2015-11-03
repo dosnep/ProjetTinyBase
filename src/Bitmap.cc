@@ -1,5 +1,6 @@
 #include "rm.h"
 
+
 Bitmap :: Bitmap(int taille)
 {
 	this->taille = taille;
@@ -19,7 +20,7 @@ Bitmap :: ~Bitmap()
 	
 };
 
-//Test s'il n'y a plus de slots vides dans le bitmap
+//Retourne vrai s'il n'y a plus de slots vides dans le bitmap sinon faux
 bool Bitmap :: IsFull()
 {
 	int compt = 0;
@@ -59,6 +60,7 @@ RC Bitmap :: GetFirstFree(SlotNum &slotnum)
 	return 0;
 };
 
+//Retourne le prochain slot non vide à partir de currentSlotNum+1
 RC Bitmap :: GetNextSlot(const SlotNum &currentSlotNum,SlotNum &nextSlotNum)
 {
 	//ON teste si nous sommes à la fin du bitmap

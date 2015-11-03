@@ -25,7 +25,6 @@ RID :: ~RID()
 };
 
 
-
 ////////GETTER
 //pageNum est initialisé avec la valeur PageNum de l'objet
 RC RID :: GetPageNum(PageNum &pageNum) const

@@ -495,12 +495,26 @@ RC Test2(void)
 	
     RC            rc;
     RM_FileHandle fh;
+    RID *delRid = new RID(2,1);
+    RID rid;
+    TestRec  del;
+    strcpy(del.str, "a4");
+    del.num = 4;
+	del.r = (float)del.num;
+	
+
+
+	
+	
+    //RM_Record *newRec = new RM_Record(2,1,(char*)update,sizeof(TestRec));
 
     printf("test2 starting ****************\n");
 
     if ((rc = CreateFile(FILENAME, sizeof(TestRec))) ||
         (rc = OpenFile(FILENAME, fh)) ||
         (rc = AddRecs(fh, FEW_RECS)) ||
+        (rc = DeleteRec(fh, *delRid)) ||
+       (rc = InsertRec(fh, (char *)&del, rid))||
         (rc = VerifyFile(fh, FEW_RECS)) || 
         (rc = CloseFile(FILENAME, fh)))
         return (rc);
