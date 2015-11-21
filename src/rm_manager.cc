@@ -30,19 +30,21 @@ res = this->pfm.OpenFile(fileName,*file); //On ouvre le fichier fileName
 		return res;
 	}
 
+//On alloue une première page pour le file header
 PF_PageHandle *firstPage = new PF_PageHandle();
-res = file->AllocatePage(*firstPage);//On alloue une première page pour le file header
+res = file->AllocatePage(*firstPage);
 	if(res != 0)
 	{
 		return res;
 	}
 
-char *pData;
-res = firstPage->GetData(pData); //On récupère les données de la page
-	if(res != 0)
-	{
-		return res;
-	}
+//On récupère les données de la page
+	char *pData;
+	res = firstPage->GetData(pData); 
+		if(res != 0)
+		{
+			return res;
+		}
 
 
 //On initialise un nouveau file header

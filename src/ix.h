@@ -13,6 +13,30 @@
 #include "rm_rid.h"  // Please don't change these lines
 #include "pf.h"
 
+//Header de l'index
+typedef struct fileheader ix_FileHeader;
+struct fileheader{
+	
+AttrType attrType; //Type de l'attribut indexé
+int tailleCle;	//Taille d'un clé
+int taillePtr;	//Taille d'un pointeur
+PageNum racine; //racine de l'arbre b-tree
+int hauteur; //hauteur de l'abre b-tree
+int nbPointeurMax;	//Nombre de pointeurs dans un noeud (ce qui veut dire qu'il y a nbPointeursMax-1 clés)
+
+};
+
+//Header d'un noeud de l'abre b-tree
+typedef struct noeudheader ix_NoeudHeader;
+struct noeudheader{
+	
+int nbCleCrt;	//Nombre courant de clé dans le noeud (ce qui veut dire qu'il y a nbclecrt+1 pointeurs)
+PageNum mother;	//Noeud parent du noeud courant
+int niveau;		//si niveau = 0, nous sommes à la racine, sinon si niveau = h-1 nous sommes sur une feuille
+
+};
+
+
 //
 // IX_IndexHandle: IX Index File interface
 //
@@ -29,6 +53,12 @@ public:
 
     // Force index files to disk
     RC ForcePages();
+
+PF_FileHandle *pf;
+bool viableFile; //bool qui teste si le fichier a été ouvert
+ix_FileHeader fh;	//FileHeader propre au fichier chargé
+
+    
 };
 
 //
@@ -74,6 +104,10 @@ public:
 
     // Close an Index
     RC CloseIndex(IX_IndexHandle &indexHandle);
+    
+    
+private:
+PF_Manager& pfm;
 };
 
 //
