@@ -110,10 +110,18 @@ memcpy(pDataRacine, &nh, sizeof(ix_NoeudHeader));
 
 
 //On marque comme sale et on unpin les 2 pages
-file->ForcePages(0);
-file->UnpinPage(0);
-file->ForcePages(1);
-file->UnpinPage(1);	
+res = file->ForcePages(0);
+	if(res !=0)
+	{return res;}
+res = file->UnpinPage(0);
+	if(res !=0)
+	{return res;}
+res = file->ForcePages(1);
+	if(res !=0)
+	{return res;}
+res = file->UnpinPage(1);
+	if(res !=0)
+	{return res;}	
 	
 	
 	return 0;
@@ -192,12 +200,15 @@ ix_FileHeader fh;
 memcpy(&fh, pData, sizeof(ix_FileHeader)); 
 indexHandle.fh = fh;
 
+
 //On unpin le file header
 res = pf->UnpinPage(0);
 	if(res !=0)
 	{return res;}
+	
 
 return 0;
+
 }
 
 // Close an Index

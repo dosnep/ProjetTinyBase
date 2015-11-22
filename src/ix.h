@@ -18,7 +18,7 @@ typedef struct fileheader ix_FileHeader;
 struct fileheader{
 	
 AttrType attrType; //Type de l'attribut indexé
-int tailleCle;	//Taille d'un clé
+int tailleCle;	//Taille d'une clé
 int taillePtr;	//Taille d'un pointeur
 PageNum racine; //racine de l'arbre b-tree
 int hauteur; //hauteur de l'abre b-tree
@@ -53,6 +53,19 @@ public:
 
     // Force index files to disk
     RC ForcePages();
+    
+	//Pointe vers la cle à la position pos
+	void GetCle(const int pos, char *pData);
+	
+	//Pointe vers le ptr avant la cle
+    void GetPtrInf(const int pos, char *pData);
+
+	//Pointe vers le ptr après la cle
+    void GetPtrSup(const int pos, char *pData);
+    
+    //Insère une clé dans un noeud
+    RC InsertKey(PageNum noeud, char *key, char *pDataPtr);
+
 
 PF_FileHandle *pf;
 bool viableFile; //bool qui teste si le fichier a été ouvert

@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
       for (testNum = 0; testNum < NUM_TESTS; testNum++)
          if ((rc = (tests[testNum])())) {
             // Print the error and exit
-           // PrintError(rc);
+           PrintError(rc);
             return (1);
          }
    }
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
          // Perform the test
          if ((rc = (tests[testNum - 1])())) {
             // Print the error and exit
-            //PrintError(rc);
+            PrintError(rc);
             return (1);
          }
       }
@@ -155,19 +155,19 @@ int main(int argc, char *argv[])
 // Desc: Print an error message by calling the proper component-specific
 //       print-error function
 //
-/**
+
 void PrintError(RC rc)
 {
    if (abs(rc) <= END_PF_WARN)
       PF_PrintError(rc);
-   else if (abs(rc) <= END_RM_WARN)
-      RM_PrintError(rc);
-   else if (abs(rc) <= END_IX_WARN)
-      IX_PrintError(rc);
+	//else if (abs(rc) <= END_RM_WARN)
+		//RM_PrintError(rc);
+   //else if (abs(rc) <= END_IX_WARN)
+		//IX_PrintError(rc);
    else
       cerr << "Error code out of range: " << rc << "\n";
 }
-**/
+
 ////////////////////////////////////////////////////////////////////
 // The following functions may be useful in tests that you devise //
 ////////////////////////////////////////////////////////////////////
@@ -498,11 +498,15 @@ RC Test1(void)
    RC rc;
    int index=0;
    IX_IndexHandle ih;
+   char key[10];
+   char ptr[10];
+   strcpy(key, "hello");
 
    printf("Test 1: create, open, close, delete an index... \n");
 
    if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
+         (rc = ih.InsertKey(1,key,ptr))||
          (rc = ixm.CloseIndex(ih)))
       return (rc);
 
