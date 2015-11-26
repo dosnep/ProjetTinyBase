@@ -55,16 +55,25 @@ public:
     RC ForcePages();
     
 	//Pointe vers la cle à la position pos
-	void GetCle(const int pos, char *pData);
+	void GetCle(const int pos, char *&pData);
 	
 	//Pointe vers le ptr avant la cle
-    void GetPtrInf(const int pos, char *pData);
+    void GetPtrInf(const int pos, char *&pData);
 
 	//Pointe vers le ptr après la cle
-    void GetPtrSup(const int pos, char *pData);
+    void GetPtrSup(const int pos, char *&pData);
     
-    //Insère une clé dans un noeud
+    //Insère une clé dans un noeud non vide
     RC InsertKey(PageNum noeud, char *key, char *pDataPtr);
+
+	//Ajoute une clé dans un noeud vide
+	RC InsertKeyEmptyNode(const PageNum racine, char *key, char *ptrAvant, char *ptrApres);
+	
+	//extrait la clé du milieu d'un noeud, retourne la clé et le pointeur après la clé
+	RC ExtractKey(const PageNum noeud, char *key, char *ptrApres);
+
+	//Insert une clé dans une feuille sans éclatement
+	RC InsertEntryToLeafNodeNoSplit(PageNum noeud, char *key);
 
 
 PF_FileHandle *pf;
@@ -127,5 +136,10 @@ PF_Manager& pfm;
 // Print-error function
 //
 void IX_PrintError(RC rc);
+
+#define IX_InsertKey    (START_IX_WARN + 0) //Clé non ajouté dans un noeud
+#define IX_InsertLeafNoSplit    (START_IX_WARN + 1) //Clé non ajouté dans une feuille sans split
+
+
 
 #endif

@@ -72,6 +72,7 @@ RC DeleteFloatEntries(IX_IndexHandle &ih, int nEntries);
 RC DeleteStringEntries(IX_IndexHandle &ih, int nEntries);
 RC VerifyIntIndex(IX_IndexHandle &ih, int nStart, int nEntries, int bExists);
 RC PrintIndex(IX_IndexHandle &ih);
+
 **/
 //
 // Array of pointers to the test functions
@@ -162,8 +163,8 @@ void PrintError(RC rc)
       PF_PrintError(rc);
 	//else if (abs(rc) <= END_RM_WARN)
 		//RM_PrintError(rc);
-   //else if (abs(rc) <= END_IX_WARN)
-		//IX_PrintError(rc);
+   else if (abs(rc) <= END_IX_WARN)
+		IX_PrintError(rc);
    else
       cerr << "Error code out of range: " << rc << "\n";
 }
@@ -420,7 +421,7 @@ RC DeleteStringEntries(IX_IndexHandle &ih, int nEntries)
 //     If bExists == 0, verify that entries do NOT exist (you can
 //     use this to test deleting entries).
 //
-/**
+
 RC VerifyIntIndex(IX_IndexHandle &ih, int nStart, int nEntries, int bExists)
 {
    RC      rc;
@@ -498,19 +499,43 @@ RC Test1(void)
    RC rc;
    int index=0;
    IX_IndexHandle ih;
-   char key[10];
-   char ptr[10];
-   strcpy(key, "hello");
+	PF_PageHandle *page = new PF_PageHandle();
+	char ptr1[10];
+	char ptr2[10];
+	ix_NoeudHeader nh;
 
    printf("Test 1: create, open, close, delete an index... \n");
 
    if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
-         (rc = ih.InsertKey(1,key,ptr))||
-         (rc = ixm.CloseIndex(ih)))
+         (rc = ih.InsertKeyEmptyNode(1,(char*)"20",ptr1,ptr2))||      
+         (rc = ih.InsertKey(1,(char *)"21",ptr1))|| 
+         (rc = ih.InsertKey(1,(char *)"25",ptr1))||    
+         (rc = ih.InsertKey(1,(char *)"27",ptr1))||                
+         (rc = ih.InsertKey(1,(char *)"30",ptr1)))    
+         //(rc = ixm.CloseIndex(ih)))
       return (rc);
 
-   LsFiles(FILENAME);
+	ih.pf->GetThisPage(1,*page);
+	char *data;
+	page->GetData(data);
+	memcpy(&nh, data, sizeof(ix_NoeudHeader));
+	//Test le noeud header
+	printf("nbCleCrt : %d, mother : %d\n",nh.nbCleCrt,nh.mother);
+	ih.GetCle(2,data);
+	int val;
+	memcpy(&val, data, sizeof(int));
+	//test l'insertion 
+	printf("pointeur : %d\n",val);
+	
+	page->GetData(data);	
+	ih.GetCle((nh.nbCleCrt/2)+1,data);
+	int iretour;
+	memcpy(&iretour, data, sizeof(int));
+	printf("clé extraite : %d\n",iretour);
+
+
+   //LsFiles((char*)FILENAME);
 
    if ((rc = ixm.DestroyIndex(FILENAME, index)))
       return (rc);

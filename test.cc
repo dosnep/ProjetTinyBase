@@ -15,17 +15,26 @@ int main(int argc, char *argv[])
 	sprintf(newFileName,"%s.%d",newFileName,32);
 	printf("%s\n",newFileName);
 	**/
+
+char *tmp;
+char *page = new char[100];
+char *pageApres = new char[100];
+tmp = page;
+int i;
+for(i = 0; i<100/4; i++)
+{
 	
-	
-	int i;
-	for(i = 0;i<10;i++)
-	{
-		if( i == 5)
-			break;
-			
-		printf("hello\n");
-		
-		
-	}
-	
+page = tmp + i*sizeof(int);
+memcpy(page, &i, sizeof(int));
+}
+
+page = tmp+3*sizeof(int);
+memcpy(pageApres, page,4*sizeof(int));
+pageApres += 3*sizeof(int);
+pageApres -= sizeof(int);
+int res;
+memcpy(&res, pageApres, sizeof(int));
+printf("indice = %d\n",res);
+
+
 }
