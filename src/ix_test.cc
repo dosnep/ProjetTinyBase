@@ -500,20 +500,23 @@ RC Test1(void)
    int index=0;
    IX_IndexHandle ih;
 	PF_PageHandle *page = new PF_PageHandle();
-	char ptr1[10];
-	char ptr2[10];
 	ix_NoeudHeader nh;
+	char ptr1[10];
 
    printf("Test 1: create, open, close, delete an index... \n");
 
    if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
-         (rc = ih.InsertKeyEmptyNode(1,(char*)"20",ptr1,ptr2))||      
-         (rc = ih.InsertKey(1,(char *)"21",ptr1))|| 
-         (rc = ih.InsertKey(1,(char *)"25",ptr1))||    
-         (rc = ih.InsertKey(1,(char *)"27",ptr1))||                
-         (rc = ih.InsertKey(1,(char *)"30",ptr1)))    
-         //(rc = ixm.CloseIndex(ih)))
+         (rc = ih.InsertEntryToLeafNodeNoSplit(1,(char*)"20"))||
+         (rc = ih.InsertEntryToLeafNodeNoSplit(1,(char*)"21"))|| 
+         (rc = ih.InsertEntryToLeafNodeNoSplit(1,(char*)"300"))||  
+         (rc = ih.InsertEntryToLeafNodeNoSplit(1,(char*)"400"))||  
+         (rc = ih.InsertEntryToLeafNodeNoSplit(1,(char*)"100"))||  
+         (rc = ih.InsertEntryToLeafNodeNoSplit(1,(char*)"120"))||  
+         (rc = ih.InsertEntryToLeafNodeNoSplit(1,(char*)"4"))||  
+         (rc = ih.InsertEntryToLeafNodeNoSplit(1,(char*)"50"))||  
+         (rc = ih.InsertEntryToLeafNodeNoSplit(1,(char*)"33")))  
+	   //(rc = ixm.CloseIndex(ih)))
       return (rc);
 
 	ih.pf->GetThisPage(1,*page);
@@ -529,11 +532,15 @@ RC Test1(void)
 	printf("pointeur : %d\n",val);
 	
 	page->GetData(data);	
-	ih.GetCle((nh.nbCleCrt/2)+1,data);
+	ih.ExtractKey(1,data,ptr1);
 	int iretour;
 	memcpy(&iretour, data, sizeof(int));
-	printf("clé extraite : %d\n",iretour);
+	page->GetData(data);
+    memcpy(&nh, data, sizeof(ix_NoeudHeader));
 
+	//test l'extraction
+	printf("clé extraite : %d\n",iretour);
+	printf("nbCleCrt : %d, mother : %d\n",nh.nbCleCrt,nh.mother);
 
    //LsFiles((char*)FILENAME);
 

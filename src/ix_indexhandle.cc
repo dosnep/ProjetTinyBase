@@ -305,7 +305,7 @@ RC IX_IndexHandle :: InsertEntryToLeafNodeNoSplit(PageNum noeud, char *key)
 }
 
 //extrait la clé du milieu d'un noeud, retourne la clé et le pointeur après la clé
-RC IX_IndexHandle :: ExtractKey(const PageNum noeud, char *key, char *ptrApres)
+RC IX_IndexHandle :: ExtractKey(const PageNum noeud, char* &key, char *ptrApres)
 {
 
 int res;
@@ -330,6 +330,21 @@ memcpy(&nh, pData, sizeof(ix_NoeudHeader));
 GetCle((nh.nbCleCrt/2)+1,key);
 //On récupère le pointeur après la clé
 GetPtrSup((nh.nbCleCrt/2)+1,ptrApres);	
+
+//On modifie le nombre de clé dans le noeud
+nh.nbCleCrt /= 2;
+
+//On modifie le noeud header dans la page
+memcpy(pData, &nh, sizeof(ix_NoeudHeader));
+
+//On force l'écriture et on unpin
+res = this->pf->ForcePages(noeud);
+if(res !=0)
+	return res;
+		
+res = this->pf->UnpinPage(noeud);
+if(res !=0)
+	return res;
 
 	
 return 0;
