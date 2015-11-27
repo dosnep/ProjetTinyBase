@@ -530,9 +530,9 @@ RC Test1(void)
 	memcpy(&val, data, sizeof(int));
 	//test l'insertion 
 	printf("pointeur : %d\n",val);
-	
+/**	
 	page->GetData(data);	
-	ih.ExtractKey(1,data,ptr1);
+	ih.ExtractKey(1,data,2);
 	int iretour;
 	memcpy(&iretour, data, sizeof(int));
 	page->GetData(data);
@@ -541,7 +541,7 @@ RC Test1(void)
 	//test l'extraction
 	printf("clé extraite : %d\n",iretour);
 	printf("nbCleCrt : %d, mother : %d\n",nh.nbCleCrt,nh.mother);
-
+**/
    //LsFiles((char*)FILENAME);
 
    if ((rc = ixm.DestroyIndex(FILENAME, index)))

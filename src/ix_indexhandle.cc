@@ -305,37 +305,77 @@ RC IX_IndexHandle :: InsertEntryToLeafNodeNoSplit(PageNum noeud, char *key)
 }
 
 //extrait la clé du milieu d'un noeud, retourne la clé et le pointeur après la clé
-RC IX_IndexHandle :: ExtractKey(const PageNum noeud, char* &key, char *ptrApres)
+RC IX_IndexHandle :: ExtractKey(const PageNum noeud, char* &key, const PageNum splitNoeud)
 {
 
 int res;
+char *tmp = new char[PF_PAGE_SIZE];
 
-//On récupère la page
+//On récupère la première page
 PF_PageHandle *page = new PF_PageHandle();
 res = this->pf->GetThisPage(noeud, *page);
 if(res !=0)
 	return res;	
 
-//On récupère les données de la page
+//On récupère les données de la première page
 char *pData;
 res = page->GetData(pData);
 if(res !=0)
 	return res;	
 
-//On récupère le noeud header
+//On récupère le noeud header de la première page
 ix_NoeudHeader nh;
 memcpy(&nh, pData, sizeof(ix_NoeudHeader));
 
 //On récupère la clé du milieu
 GetCle((nh.nbCleCrt/2)+1,key);
-//On récupère le pointeur après la clé
-GetPtrSup((nh.nbCleCrt/2)+1,ptrApres);	
 
-//On modifie le nombre de clé dans le noeud
+int nbCleCrt;
+nbCleCrt = nh.nbCleCrt;
+
+//On modifie le nombre de clé dans la première page
 nh.nbCleCrt /= 2;
 
-//On modifie le noeud header dans la page
+//On modifie le noeud header dans la première page
 memcpy(pData, &nh, sizeof(ix_NoeudHeader));
+
+//On se place au pointeur après la clé
+GetPtrSup((nbCleCrt/2)+1, pData);
+
+//On récupère la nouvelle page
+PF_PageHandle *splitPage = new PF_PageHandle();
+res = this->pf->GetThisPage(splitNoeud, *splitPage);
+if(res !=0)
+	return res;	
+	
+//On récupère les données de la nouvelle page
+char *pData2;
+res = page->GetData(pData2);
+if(res !=0)
+	return res;	
+
+//On récupère le noeud header de la nouvelle page
+ix_NoeudHeader nhSplit;
+memcpy(&nhSplit, pData2, sizeof(ix_NoeudHeader));
+
+//On va modifier le nbCleCrt dans la nouvelle page
+if(nbCleCrt%2 == 1)
+	nbCleCrt /= 2;
+
+else	
+	nbCleCrt = (nbCleCrt/2)-1;
+
+//On recopie le nouveau header dans la nouvelle page
+nh.nbCleCrt = nbCleCrt;	
+memcpy(pData2, &nhSplit, sizeof(ix_NoeudHeader));
+
+
+//on recopie la seconde partie de la première page dans la nouvelle page
+memcpy(tmp, pData, this->fh.taillePtr+nbCleCrt*(this->fh.taillePtr+this->fh.tailleCle));
+pData2 += sizeof(ix_NoeudHeader);
+memcpy(pData2, tmp, this->fh.taillePtr+nbCleCrt*(this->fh.taillePtr+this->fh.tailleCle));
+
+	
 
 //On force l'écriture et on unpin
 res = this->pf->ForcePages(noeud);
@@ -343,6 +383,14 @@ if(res !=0)
 	return res;
 		
 res = this->pf->UnpinPage(noeud);
+if(res !=0)
+	return res;
+
+res = this->pf->ForcePages(splitNoeud);
+if(res !=0)
+	return res;
+		
+res = this->pf->UnpinPage(splitNoeud);
 if(res !=0)
 	return res;
 

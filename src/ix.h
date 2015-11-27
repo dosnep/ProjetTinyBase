@@ -70,7 +70,7 @@ public:
 	RC InsertKeyEmptyNode(const PageNum racine, char *key, char *ptrAvant, char *ptrApres);
 	
 	//extrait la clé du milieu d'un noeud, retourne la clé et le pointeur après la clé
-	RC ExtractKey(const PageNum noeud, char* &key, char *ptrApres);
+	RC ExtractKey(const PageNum noeud, char* &key, const PageNum splitNoeud);
 
 	//Insert une clé dans une feuille sans éclatement
 	RC InsertEntryToLeafNodeNoSplit(PageNum noeud, char *key);
