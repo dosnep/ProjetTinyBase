@@ -397,3 +397,84 @@ if(res !=0)
 	
 return 0;
 }
+
+
+//Insert une clé dans une feuille avec éclatement
+RC IX_IndexHandle :: InsertEntryToLeafNodeSplit(PageNum noeud, char *key)
+{
+	int res;
+	
+	//On récupère la page
+	PF_PageHandle *page = new PF_PageHandle();
+	res = this->pf->GetThisPage(noeud, *page);
+	if(res != 0)
+		return res;
+	
+	//On récupère les données de la page
+	char *pData;
+	res = page->GetData(pData);
+	if(res != 0)
+		return res;
+	
+	//On récupère le noeud header de la page
+	ix_NoeudHeader nh;
+	memcpy(&nh, pData, sizeof(ix_NoeudHeader));
+	
+	//On instancie une nouvelle page qui sera le fils droit
+	PF_PageHandle *filsDroit = new PF_PageHandle();
+	this->pf->AllocatePage(*filsDroit);
+	//On récupère le numéro de cette page
+	PageNum filsDroitNum;
+	filsDroit->GetPageNum(filsDroitNum);
+	//On fait une extraction de la clé
+	char *val = new char[this->fh.tailleCle];
+	this->ExtractKey(noeud,val,filsDroitNum);
+	//On teste dans quel fils insérer notre nouvelle clé
+	int ival = atoi(val);
+	int ikey = atoi(key);
+	char *ptrApres = new char[this->fh.taillePtr];
+	char *ptrAvant = new char[this->fh.taillePtr];
+		
+	if(ikey >ival)
+		InsertKey(filsDroitNum,key,ptrApres);
+	else
+		InsertKey(noeud,key,ptrApres);
+	
+	
+	//On teste si notre feuille est la racine
+	if(this->fh.hauteur == 1)
+	{	
+		//Si oui on instancie une nouvelle racine
+		PF_PageHandle *newRacine = new PF_PageHandle();
+		this->pf->AllocatePage(*newRacine);
+		//On récupère le numéro de la page de la nouvelle racine
+		PageNum newRacineNum;
+		newRacine->GetPageNum(newRacineNum);
+		//On insère un nouveau header dans ce noeud
+		ix_NoeudHeader nhRacine;
+		nhRacine.nbCleCrt = 1;
+		nhRacine.mother = -1;
+		char *pDataRacine;
+		newRacine->GetData(pDataRacine);
+		memcpy(pDataRacine,&nhRacine,sizeof(ix_NoeudHeader));
+		//On y insère notre clé 
+		this->InsertKeyEmptyNode(newRacineNum, key, ptrAvant, ptrApres);
+		//On termine le chaînage
+		memcpy(ptrAvant, &noeud, sizeof(this->fh.taillePtr));
+		memcpy(ptrApres, &filsDroitNum, sizeof(this->fh.taillePtr));
+
+	}
+	
+	else
+	{
+		//Sinon nous appelons la fonction parent
+	}
+	
+return 0;	
+}
+
+
+
+
+
+

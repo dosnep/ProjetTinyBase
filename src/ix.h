@@ -74,7 +74,9 @@ public:
 
 	//Insert une clé dans une feuille sans éclatement
 	RC InsertEntryToLeafNodeNoSplit(PageNum noeud, char *key);
-
+	
+	//Insert une clé dans une feuille avec éclatement
+	RC InsertEntryToLeafNodeSplit(PageNum noeud, char *key);
 
 PF_FileHandle *pf;
 bool viableFile; //bool qui teste si le fichier a été ouvert
