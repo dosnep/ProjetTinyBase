@@ -501,47 +501,74 @@ RC Test1(void)
    IX_IndexHandle ih;
 	PF_PageHandle *page = new PF_PageHandle();
 	ix_NoeudHeader nh;
-	char ptr1[10];
+	char *ptr1 = new char(sizeof(int));
+	char *ptr2 = new char(sizeof(int));
+	char key[10];
+int ikey = 3;
+memcpy(key, &ikey, sizeof(int));
 
    printf("Test 1: create, open, close, delete an index... \n");
 
    if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
-         (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
-         (rc = ih.InsertEntryToLeafNodeNoSplit(1,(char*)"20"))||
-         (rc = ih.InsertEntryToLeafNodeNoSplit(1,(char*)"21"))|| 
-         (rc = ih.InsertEntryToLeafNodeNoSplit(1,(char*)"300"))||  
-         (rc = ih.InsertEntryToLeafNodeNoSplit(1,(char*)"400"))||  
-         (rc = ih.InsertEntryToLeafNodeNoSplit(1,(char*)"100"))||  
-         (rc = ih.InsertEntryToLeafNodeNoSplit(1,(char*)"120"))||  
-         (rc = ih.InsertEntryToLeafNodeNoSplit(1,(char*)"4"))||  
-         (rc = ih.InsertEntryToLeafNodeNoSplit(1,(char*)"50"))||  
-         (rc = ih.InsertEntryToLeafNodeNoSplit(1,(char*)"33")))  
-	   //(rc = ixm.CloseIndex(ih)))
-      return (rc);
+         (rc = ixm.OpenIndex(FILENAME, index, ih)))
+		     return (rc)
+		     ;
+	      ih.InsertEntryToLeafNodeNoSplit(1,key);
+	      ikey++;
+	      memcpy(key, &ikey, sizeof(int));
+          ih.InsertEntryToLeafNodeNoSplit(1,key);
+		 ikey = 30;
+	      memcpy(key, &ikey, sizeof(int));
+          ih.InsertEntryToLeafNodeNoSplit(1,key);
+		ikey = 1;
+	      memcpy(key, &ikey, sizeof(int));
+          ih.InsertEntryToLeafNodeNoSplit(1,key);
+		ikey = 25;
+	      memcpy(key, &ikey, sizeof(int));
 
+			ih.InsertEntryToLeafNodeSplit(1,key);
+
+	   //(rc = ixm.CloseIndex(ih)))
+ 
+
+//fils gauche
 	ih.pf->GetThisPage(1,*page);
 	char *data;
 	page->GetData(data);
 	memcpy(&nh, data, sizeof(ix_NoeudHeader));
 	//Test le noeud header
 	printf("nbCleCrt : %d, mother : %d\n",nh.nbCleCrt,nh.mother);
-	ih.GetCle(2,data);
-	int val;
-	memcpy(&val, data, sizeof(int));
-	//test l'insertion 
-	printf("pointeur : %d\n",val);
-/**	
-	page->GetData(data);	
-	ih.ExtractKey(1,data,2);
-	int iretour;
-	memcpy(&iretour, data, sizeof(int));
-	page->GetData(data);
-    memcpy(&nh, data, sizeof(ix_NoeudHeader));
 
-	//test l'extraction
-	printf("clé extraite : %d\n",iretour);
+ih.GetCle(1,data);
+int ival;
+memcpy(&ival, data, sizeof(int));
+printf("valeur de la racine : %d\n",ival);
+
+
+//fils droit
+	ih.pf->GetThisPage(2,*page);
+	page->GetData(data);
+	memcpy(&nh, data, sizeof(ix_NoeudHeader));
+	//Test le noeud header
 	printf("nbCleCrt : %d, mother : %d\n",nh.nbCleCrt,nh.mother);
-**/
+	
+ih.GetCle(2,data);
+memcpy(&ival, data, sizeof(int));
+printf("valeur de la racine : %d\n",ival);	
+	
+	
+//racine
+	ih.pf->GetThisPage(3,*page);
+	page->GetData(data);
+	memcpy(&nh, data, sizeof(ix_NoeudHeader));
+	//Test le noeud header
+	printf("nbCleCrt : %d, mother : %d\n",nh.nbCleCrt,nh.mother);	
+
+	
+ih.GetCle(1,data);
+memcpy(&ival, data, sizeof(int));
+printf("valeur de la racine : %d\n",ival);	
+
    //LsFiles((char*)FILENAME);
 
    if ((rc = ixm.DestroyIndex(FILENAME, index)))

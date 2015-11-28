@@ -64,10 +64,10 @@ public:
     void GetPtrSup(const int pos, char *&pData);
     
     //Insère une clé dans un noeud non vide
-    RC InsertKey(PageNum noeud, char *key, char *pDataPtr);
+    RC InsertKey(PageNum noeud, char *key, char *&pDataPtr);
 
 	//Ajoute une clé dans un noeud vide
-	RC InsertKeyEmptyNode(const PageNum racine, char *key, char *ptrAvant, char *ptrApres);
+	RC InsertKeyEmptyNode(const PageNum racine, char *key, char *&ptrAvant, char *&ptrApres);
 	
 	//extrait la clé du milieu d'un noeud, retourne la clé et le pointeur après la clé
 	RC ExtractKey(const PageNum noeud, char* &key, const PageNum splitNoeud);
