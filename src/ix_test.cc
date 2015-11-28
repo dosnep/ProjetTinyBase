@@ -504,6 +504,7 @@ RC Test1(void)
 	char key[10];
 	int ikey;
 	int indiceCle;
+	char *ptr;
    printf("Test 1: create, open, close, delete an index... \n");
 
    if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
@@ -522,14 +523,13 @@ RC Test1(void)
 			ih.InsertEntryToLeafNodeSplit(1,key);
 
  
-printf("Hauteur de l'arbre : %d\n",ih.fh.hauteur);
-//fils gauche
+//Feuille gauche
 	ih.pf->GetThisPage(1,*page);
 	char *data;
 	page->GetData(data);
 	memcpy(&nh, data, sizeof(ix_NoeudHeader));
 	//Test le noeud header
-	printf("FILS GAUCHE\n==========\nnbCleCrt : %d, mother : %d\n",nh.nbCleCrt,nh.mother);
+	printf("FEUILLE GAUCHE\n==========\nnbCleCrt : %d, mother : %d\n",nh.nbCleCrt,nh.mother);
 indiceCle = 96;
 ih.GetCle(indiceCle,data);
 int ival;
@@ -537,21 +537,69 @@ memcpy(&ival, data, sizeof(int));
 printf("valeur de la clé à l'indice %d : %d\n",indiceCle,ival);
 
 
-//fils droit
+//feuille droite
 	ih.pf->GetThisPage(2,*page);
 	page->GetData(data);
 	memcpy(&nh, data, sizeof(ix_NoeudHeader));
 	//Test le noeud header
-	printf("FILS DROIT\n==========\nnbCleCrt : %d, mother : %d\n",nh.nbCleCrt,nh.mother);
+	printf("FEUILLE DROIT\n==========\nnbCleCrt : %d, mother : %d\n",nh.nbCleCrt,nh.mother);
 
 indiceCle = 1;	
 ih.GetCle(indiceCle,data);
 memcpy(&ival, data, sizeof(int));
 printf("valeur de la clé à l'indice %d : %d\n",indiceCle,ival);	
 	
-	
-//racine
+
+//On insère deux éléments à la racine avec la fonction ajout parent 
+ikey = 666;
+memcpy(key, &ikey, sizeof(int));
+ih.InsertEntryToIntNodeNoSplit(3,key,ptr);	
+ikey = 333;
+memcpy(key, &ikey, sizeof(int));
+ih.InsertEntryToIntNodeNoSplit(3,key,ptr);	
+ikey = 200;
+memcpy(key, &ikey, sizeof(int));
+ih.InsertEntryToIntNodeSplit(3,key,ptr);	
+
+
+//Noeud interne gauche
 	ih.pf->GetThisPage(3,*page);
+	page->GetData(data);
+	memcpy(&nh, data, sizeof(ix_NoeudHeader));
+	//Test le noeud header
+	printf("NOEUD INTERNE GAUCHE\n==========\nnbCleCrt : %d, mother : %d\n",nh.nbCleCrt,nh.mother);	
+
+
+indiceCle = 1;	
+ih.GetCle(indiceCle,data);
+memcpy(&ival, data, sizeof(int));
+printf("valeur de la clé à l'indice %d : %d\n",indiceCle,ival);	
+page->GetData(data);
+ih.GetPtrInf(1,data);
+memcpy(&ival, data, sizeof(int));
+printf("pointeur inférieur: %d\n",ival);	
+page->GetData(data);
+ih.GetPtrSup(1,data);
+memcpy(&ival, data, sizeof(int));
+printf("pointeur supérieur: %d\n",ival);	
+
+
+//Noeud interne droit
+	ih.pf->GetThisPage(4,*page);
+	page->GetData(data);
+	memcpy(&nh, data, sizeof(ix_NoeudHeader));
+	//Test le noeud header
+	printf("NOEUD INTERNE DROIT\n==========\nnbCleCrt : %d, mother : %d\n",nh.nbCleCrt,nh.mother);	
+
+
+indiceCle = 1;	
+ih.GetCle(indiceCle,data);
+memcpy(&ival, data, sizeof(int));
+printf("valeur de la clé à l'indice %d : %d\n",indiceCle,ival);	
+
+
+//racine
+	ih.pf->GetThisPage(ih.fh.racine,*page);
 	page->GetData(data);
 	memcpy(&nh, data, sizeof(ix_NoeudHeader));
 	//Test le noeud header
@@ -561,12 +609,22 @@ indiceCle = 1;
 ih.GetCle(indiceCle,data);
 memcpy(&ival, data, sizeof(int));
 printf("valeur de la clé à l'indice %d : %d\n",indiceCle,ival);	
+page->GetData(data);
+ih.GetPtrInf(1,data);
+memcpy(&ival, data, sizeof(int));
+printf("pointeur inférieur: %d\n",ival);	
+page->GetData(data);
+ih.GetPtrSup(1,data);
+memcpy(&ival, data, sizeof(int));
+printf("pointeur supérieur: %d\n",ival);
+
+printf("Hauteur de l'arbre : %d\n",ih.fh.hauteur);
 
 
 ih.pf->UnpinPage(1);
 ih.pf->UnpinPage(2);
 ih.pf->UnpinPage(3);
-
+ih.pf->UnpinPage(ih.fh.racine);
 
 
 	if((rc = ixm.CloseIndex(ih)))

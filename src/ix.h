@@ -78,6 +78,14 @@ public:
 	//Insert une clé dans une feuille avec éclatement
 	RC InsertEntryToLeafNodeSplit(PageNum noeud, char *key);
 
+	//Insert une clé dans un parent sans éclatement
+	RC InsertEntryToIntNodeNoSplit(PageNum noeud, char *key,char *&ptr);
+
+	//Insert une clé dans un parent avec éclatement
+	RC InsertEntryToIntNodeSplit(PageNum noeud, char *key,char *&ptr);
+
+
+
 PF_FileHandle *pf;
 bool viableFile; //bool qui teste si le fichier a été ouvert
 ix_FileHeader fh;	//FileHeader propre au fichier chargé
