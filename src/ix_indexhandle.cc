@@ -553,9 +553,7 @@ RC IX_IndexHandle :: InsertEntryToIntNodeNoSplit(PageNum noeud, char *key, PageN
 	char *ptr;
 	this->InsertKey(noeud, key, ptr);
 	memcpy(ptr, &splitNoeud,this->fh.taillePtr);
-	int t;
-	memcpy(&t, ptr, this->fh.taillePtr);
-	printf("ptr : %d\n",t);
+
 return 0;	
 }
 
@@ -627,9 +625,9 @@ int res;
 		
 	//On met le pointeur à la valeur de son fils	
 	memcpy(ptrApres, &noeudSplit, this->fh.taillePtr);
-	int t;
-	memcpy(&t, ptrApres, this->fh.taillePtr);
-	printf("valeur2 : %d\n",t);
+
+	//On modifie le parent de tout les fils de la partie droite
+	this->ModifParent(filsDroitNum);
 	
 	//On teste si notre parent est la racine
 	if(nh.mother == -1)
@@ -709,8 +707,10 @@ int res;
 	
 	else
 	{
+
 		//On ajoute une clé dans un noeud interne
 		this->InsertEntryToIntNode(nh.mother,key,filsDroitNum); 
+
 	}	
 	
 	
@@ -773,3 +773,80 @@ RC IX_IndexHandle :: InsertEntryToIntNode(PageNum noeud, char *key, PageNum spli
 	return 0;	
 }
 
+//Pour chaque fils de noeud, son parent sera noeud
+RC IX_IndexHandle :: ModifParent(PageNum noeud)
+{
+	//On charge le noeud
+	PF_PageHandle *page = new PF_PageHandle();
+	this->pf->GetThisPage(noeud, *page);
+	
+	//On charge les données de la page
+	char *pData;
+	page->GetData(pData);
+	
+	//On récupère le noeud header 
+	ix_NoeudHeader nh;
+	memcpy(&nh, pData, sizeof(ix_NoeudHeader));
+	int filsNum;
+	char *pDataFils;
+	ix_NoeudHeader nhFils;
+	//On va parcourir chacun des fils du noeud
+	int i;
+	for (i = 1; i<=nh.nbCleCrt; i++)
+	{
+		//Si nous sommes au premier élément alors il faut aussi récupérer le premier pointeur
+		if(i == 1)
+		{
+		
+		//On récupère le pointeur d'après la clé
+		this->GetPtrInf(i, pData);
+		//On récupère le numéro de la page du fils
+		memcpy(&filsNum, pData, this->fh.taillePtr);
+		//On charge la page
+		this->pf->GetThisPage(filsNum, *page);
+		//On charge les données
+		page->GetData(pDataFils);
+		//On récupère le noeud header
+		memcpy(&nhFils, pDataFils, sizeof(ix_NoeudHeader));
+		//On modifie le parent du noeud header
+		nhFils.mother = noeud;
+		//On écrit le noeud header dans la page
+		memcpy(pDataFils, &nhFils, sizeof(ix_NoeudHeader));
+		//On force l'écriture et unpin la page
+		this->pf->ForcePages(filsNum);
+		this->pf->UnpinPage(filsNum);
+		
+		
+		}
+		
+		//On remet la pointeur au début du fichier
+		page->GetData(pData);
+
+		
+		//On récupère le pointeur d'après la clé
+		this->GetPtrSup(i, pData);
+		//On récupère le numéro de la page du fils
+		memcpy(&filsNum, pData, this->fh.taillePtr);
+		//On charge la page
+		this->pf->GetThisPage(filsNum, *page);
+		//On charge les données
+		page->GetData(pDataFils);
+		//On récupère le noeud header
+		memcpy(&nhFils, pDataFils, sizeof(ix_NoeudHeader));
+		//On modifie le parent du noeud header
+		nhFils.mother = noeud;
+		//On écrit le noeud header dans la page
+		memcpy(pDataFils, &nhFils, sizeof(ix_NoeudHeader));
+		//On force l'écriture et unpin la page
+		this->pf->ForcePages(noeud);
+		this->pf->UnpinPage(noeud);
+		
+		
+	}
+	
+		this->pf->ForcePages(filsNum);
+		this->pf->UnpinPage(filsNum);
+	
+	
+	return 0;
+}

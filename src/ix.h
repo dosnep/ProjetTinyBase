@@ -63,6 +63,9 @@ public:
 	//Pointe vers le ptr après la cle
     void GetPtrSup(const int pos, char *&pData);
     
+    //Pour chaque fils de noeud, son parent sera noeud
+    RC ModifParent(PageNum noeud);
+    
     //Insère une clé dans un noeud non vide
     RC InsertKey(PageNum noeud, char *key, char *&pDataPtr);
 

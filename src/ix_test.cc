@@ -621,7 +621,6 @@ printf("pointeur supérieur: %d\n",ival);
 
 printf("Hauteur de l'arbre : %d\n",ih.fh.hauteur);
 
-
 ih.pf->UnpinPage(1);
 ih.pf->UnpinPage(2);
 ih.pf->UnpinPage(3);
