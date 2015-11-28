@@ -69,7 +69,7 @@ public:
 	//Ajoute une clé dans un noeud vide
 	RC InsertKeyEmptyNode(const PageNum racine, char *key, char *&ptrAvant, char *&ptrApres);
 	
-	//extrait la clé du milieu d'un noeud, retourne la clé et le pointeur après la clé
+	//extrait la clé du milieu d'un noeud,modifie le fils gauche, modifie le fils droit
 	RC ExtractKey(const PageNum noeud, char* &key, const PageNum splitNoeud);
 
 	//Insert une clé dans une feuille sans éclatement
