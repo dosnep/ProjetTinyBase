@@ -553,13 +553,14 @@ printf("valeur de la clé à l'indice %d : %d\n",indiceCle,ival);
 //On insère deux éléments à la racine avec la fonction ajout parent 
 ikey = 666;
 memcpy(key, &ikey, sizeof(int));
-ih.InsertEntryToIntNodeNoSplit(3,key,ptr);	
+ih.InsertEntryToIntNodeNoSplit(3,key,2);	
 ikey = 333;
 memcpy(key, &ikey, sizeof(int));
-ih.InsertEntryToIntNodeNoSplit(3,key,ptr);	
+ih.InsertEntryToIntNodeNoSplit(3,key,2);	
+
 ikey = 200;
 memcpy(key, &ikey, sizeof(int));
-ih.InsertEntryToIntNodeSplit(3,key,ptr);	
+ih.InsertEntryToIntNodeSplit(3,key,2);	
 
 
 //Noeud interne gauche
@@ -624,6 +625,7 @@ printf("Hauteur de l'arbre : %d\n",ih.fh.hauteur);
 ih.pf->UnpinPage(1);
 ih.pf->UnpinPage(2);
 ih.pf->UnpinPage(3);
+ih.pf->UnpinPage(4);
 ih.pf->UnpinPage(ih.fh.racine);
 
 

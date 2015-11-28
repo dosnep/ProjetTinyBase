@@ -78,12 +78,17 @@ public:
 	//Insert une clé dans une feuille avec éclatement
 	RC InsertEntryToLeafNodeSplit(PageNum noeud, char *key);
 
+	//Insert une clé dans une feuille
+	RC InsertEntryToLeaf(PageNum noeud, char *key);
+
 	//Insert une clé dans un parent sans éclatement
-	RC InsertEntryToIntNodeNoSplit(PageNum noeud, char *key,char *&ptr);
+	RC InsertEntryToIntNodeNoSplit(PageNum noeud, char *key, PageNum splitNoeud);
 
 	//Insert une clé dans un parent avec éclatement
-	RC InsertEntryToIntNodeSplit(PageNum noeud, char *key,char *&ptr);
+	RC InsertEntryToIntNodeSplit(PageNum noeud, char *key,PageNum splitNoeud);
 
+	//Insert une clé dans un noeud interne
+	RC InsertEntryToIntNode(PageNum noeud, char *key, PageNum splitNoeud);	
 
 
 PF_FileHandle *pf;

@@ -539,7 +539,8 @@ RC IX_IndexHandle :: InsertEntryToLeafNodeSplit(PageNum noeud, char *key)
 	
 	else
 	{
-		//Sinon nous appelons la fonction parent
+		//On ajoute une clé dans un noeud interne
+		this->InsertEntryToIntNode(nh.mother,key,filsDroitNum); 
 	}
 	
 return 0;	
@@ -547,14 +548,19 @@ return 0;
 
 
 //Insert une clé dans un parent sans éclatement
-RC IX_IndexHandle :: InsertEntryToIntNodeNoSplit(PageNum noeud, char *key, char *&ptr)
+RC IX_IndexHandle :: InsertEntryToIntNodeNoSplit(PageNum noeud, char *key, PageNum splitNoeud)
 {
+	char *ptr;
 	this->InsertKey(noeud, key, ptr);
+	memcpy(ptr, &splitNoeud,this->fh.taillePtr);
+	int t;
+	memcpy(&t, ptr, this->fh.taillePtr);
+	printf("ptr : %d\n",t);
 return 0;	
 }
 
 //Insert une clé dans un parent avec éclatement
-RC IX_IndexHandle :: InsertEntryToIntNodeSplit(PageNum noeud, char *key,char *&ptr)
+RC IX_IndexHandle :: InsertEntryToIntNodeSplit(PageNum noeud, char *key,PageNum noeudSplit)
 {
 	
 int res;
@@ -618,6 +624,12 @@ int res;
 	//Sinon on fait l'insertion dans le fils gauche
 	else
 		InsertKey(noeud,key,ptrApres);
+		
+	//On met le pointeur à la valeur de son fils	
+	memcpy(ptrApres, &noeudSplit, this->fh.taillePtr);
+	int t;
+	memcpy(&t, ptrApres, this->fh.taillePtr);
+	printf("valeur2 : %d\n",t);
 	
 	//On teste si notre parent est la racine
 	if(nh.mother == -1)
@@ -697,7 +709,8 @@ int res;
 	
 	else
 	{
-		//Sinon nous appelons la fonction parent
+		//On ajoute une clé dans un noeud interne
+		this->InsertEntryToIntNode(nh.mother,key,filsDroitNum); 
 	}	
 	
 	
@@ -705,7 +718,58 @@ int res;
 return 0;
 }
 
+//Insert une clé dans une feuille
+RC IX_IndexHandle :: InsertEntryToLeaf(PageNum noeud, char *key)
+{
+	//On récupère la page 
+	PF_PageHandle *page = new PF_PageHandle();
+	this->pf->GetThisPage(noeud, *page);
+	
+	//On charge les données de la page
+	char *pData;
+    page->GetData(pData);
+    
+	//On récupère le noeud header
+	ix_NoeudHeader nh;
+	memcpy(&nh, pData, sizeof(ix_NoeudHeader));
+	
+	//On teste si la feuille est pleine
+	if(nh.nbCleCrt == this->fh.nbPointeurMax-1)
+		this->InsertEntryToLeafNodeSplit(noeud, key);
+	//Sinon la feuille n'est pas pleine
+	else
+		this->InsertEntryToLeafNodeNoSplit(noeud, key);
+	
+	
+	return 0;
+	
+}
 
 
-
+//Insert une clé dans un noeud interne
+RC IX_IndexHandle :: InsertEntryToIntNode(PageNum noeud, char *key, PageNum splitNoeud)
+{
+	
+	//On récupère la page 
+	PF_PageHandle *page = new PF_PageHandle();
+	this->pf->GetThisPage(noeud, *page);
+	
+	//On charge les données de la page
+	char *pData;
+    page->GetData(pData);
+    
+	//On récupère le noeud header
+	ix_NoeudHeader nh;
+	memcpy(&nh, pData, sizeof(ix_NoeudHeader));
+	
+	//On teste si la feuille est pleine
+	if(nh.nbCleCrt == this->fh.nbPointeurMax-1)
+		this->InsertEntryToIntNodeSplit(noeud, key, splitNoeud);
+	//Sinon la feuille n'est pas pleine
+	else
+		this->InsertEntryToIntNodeNoSplit(noeud, key, splitNoeud);
+	
+	
+	return 0;	
+}
 
