@@ -33,8 +33,8 @@ using namespace std;
 #define FILENAME     "testrel"        // test file name
 #define BADFILE      "/abc/def/xyz"   // bad file name
 #define STRLEN       39               // length of strings to index
-#define FEW_ENTRIES  20
-#define MANY_ENTRIES 1000
+#define FEW_ENTRIES  100
+#define MANY_ENTRIES 20
 #define NENTRIES     5000             // Size of values array
 #define PROG_UNIT    200              // how frequently to give progress
 // reports when adding lots of entries
@@ -62,8 +62,9 @@ RC Test4(void);
 void PrintError(RC rc);
 void LsFiles(char *fileName);
 void ran(int n);
-/**
+
 RC InsertIntEntries(IX_IndexHandle &ih, int nEntries);
+/**
 RC InsertFloatEntries(IX_IndexHandle &ih, int nEntries);
 RC InsertStringEntries(IX_IndexHandle &ih, int nEntries);
 RC AddRecs(RM_FileHandle &fh, int nRecs);
@@ -207,7 +208,7 @@ void ran(int n)
       values[r] = t;
    }
 }
-/**
+
 //
 // InsertIntEntries
 //
@@ -238,7 +239,7 @@ RC InsertIntEntries(IX_IndexHandle &ih, int nEntries)
    // Return ok
    return (0);
 }
-
+/**
 //
 // Desc: Add a number of float entries to the index
 //
@@ -503,29 +504,30 @@ RC Test1(void)
 	ix_NoeudHeader nh;
 	char key[10];
 	int ikey;
+	RID rid;
+
+
 	int indiceCle;
 	memcpy(key, &ikey, sizeof(int));
    printf("Test 1: create, open, close, delete an index... \n");
 
    if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)))
-                    
+
 
 			return (rc);
 						
-		     for(ikey = 5; ikey<9; ikey++)
+		     for(ikey = 1; ikey<10; ikey++)
 		     {
 				memcpy(key, &ikey, sizeof(int)); 
-				ih.InsertEntry(key); 
+				ih.InsertEntry(key,rid); 
 				 
 			 }
-			ikey = 3;
-			memcpy(key, &ikey, sizeof(int)); 
-				ih.InsertEntry(key); 
+
 
 
 		printf("hauteur de l'arbre : %d\n",ih.fh.hauteur);	
- 
+
 //Feuille gauche
 	ih.pf->GetThisPage(1,*page);
 	char *data;
@@ -596,7 +598,7 @@ ih.pf->UnpinPage(2);
 // Test2 tests inserting a few integer entries into the index.
 //
 RC Test2(void)
-{/**
+{
    RC rc;
    IX_IndexHandle ih;
    int index=0;
@@ -605,25 +607,26 @@ RC Test2(void)
 
    if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
-         (rc = InsertIntEntries(ih, FEW_ENTRIES)) ||
-         (rc = ixm.CloseIndex(ih)) ||
-         (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
-
+         (rc = InsertIntEntries(ih, FEW_ENTRIES))||
+         (rc = ixm.CloseIndex(ih))||
+         (rc = ixm.OpenIndex(FILENAME, index, ih))||
+/**
          // ensure inserted entries are all there
          (rc = VerifyIntIndex(ih, 0, FEW_ENTRIES, TRUE)) ||
 
          // ensure an entry not inserted is not there
          (rc = VerifyIntIndex(ih, FEW_ENTRIES, 1, FALSE)) ||
+  **/ 
          (rc = ixm.CloseIndex(ih)))
       return (rc);
 
-   LsFiles(FILENAME);
+   LsFiles((char*)FILENAME);
 
    if ((rc = ixm.DestroyIndex(FILENAME, index)))
       return (rc);
 
    printf("Passed Test 2\n\n");
-**/
+
    return (0);
 
 }

@@ -99,8 +99,6 @@ public:
 	//Va chercher le sous arbre dans lequel nous allons insérer notre clé
 	RC InsertEntryToInt1Node(PageNum noeud, char *key, int hauteur);	
 
-	//Insère une clé
-	RC InsertEntry(char *key);	
 
 
 

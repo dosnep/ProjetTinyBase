@@ -44,7 +44,7 @@ RC IX_Manager :: CreateIndex(const char *fileName, int indexNo, AttrType attrTyp
 	fh.taillePtr = sizeof(int);
 	fh.racine = -1; //Pour le moment il n'y a pas de racine
 	fh.hauteur = 0; //Pour le moment l'arbre est vide
-	fh.nbPointeurMax = 4;
+	fh.nbPointeurMax = 5;
 	
 	
 	//Nous allons ouvrir le nouveau fichier
@@ -217,6 +217,7 @@ RC IX_Manager :: CloseIndex(IX_IndexHandle &indexHandle)
 int res;
 	
 //On charge le file header du fichier
+
 PF_PageHandle *page = new PF_PageHandle();
 res = indexHandle.pf->GetThisPage(0,*page);
 	if(res !=0)
@@ -238,16 +239,17 @@ res = page->GetData(pData);
 memcpy(pData, &indexHandle.fh,sizeof(ix_FileHeader));
 
 //On marque les données en sales et on unpin le file header
-res = indexHandle.pf->MarkDirty(0);
+res = indexHandle.pf->ForcePages(0);
 	if(res !=0)
 	{return res;}
 res = indexHandle.pf->UnpinPage(0);
 	if(res !=0)
 	{return res;}
+
 //On ferme le fichier
 res = this->pfm.CloseFile(*indexHandle.pf);
 	if(res !=0)
 	{return res;}
-	
+
 return 0;
 }
