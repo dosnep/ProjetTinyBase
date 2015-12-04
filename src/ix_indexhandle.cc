@@ -6,7 +6,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-
 IX_IndexHandle :: IX_IndexHandle()
 {
 	this->pf = NULL;
@@ -175,6 +174,8 @@ RC IX_IndexHandle :: InsertKey(PageNum noeud, char *key, char *&pDataPtr)
 					
 					//On force l'écriture et on unpin
 					res = this->pf->ForcePages(noeud);
+					if(res !=0)
+						return res;
 					res = this->pf->UnpinPage(noeud);
 					if(res !=0)
 						return res;
@@ -230,6 +231,8 @@ RC IX_IndexHandle :: InsertKey(PageNum noeud, char *key, char *&pDataPtr)
 
 				
 			}
+			
+			
 	return IX_InsertKey;
 	
 
@@ -259,7 +262,7 @@ RC IX_IndexHandle :: InsertEntryToLeafNodeNoSplit(PageNum noeud, char *key)
 	//On récupère le noeud header
 	ix_NoeudHeader nh;
 	memcpy(&nh, pData, sizeof(ix_NoeudHeader));
-	
+
 	//On teste si le noeud est vide
 	if(nh.nbCleCrt == 0)
 	{
@@ -443,7 +446,7 @@ RC IX_IndexHandle :: InsertEntryToLeafNodeSplit(PageNum noeud, char *key)
 	//On instancie un noeud header dans le fils droit
 	ix_NoeudHeader nhFilsDroit;
 	nhFilsDroit.nbCleCrt = 0;
-	nhFilsDroit.mother = -1;
+	nhFilsDroit.mother = nh.mother;
 	//On recopie le noeud header dans la page
 	memcpy(pDataFilsDroit, &nhFilsDroit, sizeof(ix_NoeudHeader));
 
@@ -466,7 +469,7 @@ RC IX_IndexHandle :: InsertEntryToLeafNodeSplit(PageNum noeud, char *key)
 	//Sinon on fait l'insertion dans le fils gauche
 	else
 		InsertKey(noeud,key,ptrApres);
-	
+
 	//On teste si notre feuille est la racine
 	if(this->fh.hauteur == 1)
 	{	
@@ -498,9 +501,10 @@ RC IX_IndexHandle :: InsertEntryToLeafNodeSplit(PageNum noeud, char *key)
 		this->InsertKeyEmptyNode(newRacineNum, nouvelInsertion, ptrAvant, ptrApres);
 		
 		//On termine le chaînage
-		memcpy(ptrAvant, &noeud, sizeof(this->fh.taillePtr));
-		memcpy(ptrApres, &filsDroitNum, sizeof(this->fh.taillePtr));
+		memcpy(ptrAvant, &noeud, this->fh.taillePtr);
+		memcpy(ptrApres, &filsDroitNum, this->fh.taillePtr);
 		
+
 		//On modifie le parent des fils gauche et droit
 			//On doit recharger le noeuheader car il a été modifié
 		memcpy(&nh, pData, sizeof(ix_NoeudHeader));
@@ -511,6 +515,9 @@ RC IX_IndexHandle :: InsertEntryToLeafNodeSplit(PageNum noeud, char *key)
 		//On écrit les headers dans les pages
 		memcpy(pData, &nh, sizeof(ix_NoeudHeader));
 		memcpy(pDataFilsDroit, &nhFilsDroit, sizeof(ix_NoeudHeader));
+		
+		//On change le numéro de la racine dans le file header
+		this->fh.racine = newRacineNum;		
 		
 		//On termine en incrémentant la hauteur de l'arbre
 		this->fh.hauteur++;
@@ -540,7 +547,24 @@ RC IX_IndexHandle :: InsertEntryToLeafNodeSplit(PageNum noeud, char *key)
 	else
 	{
 		//On ajoute une clé dans un noeud interne
-		this->InsertEntryToIntNode(nh.mother,key,filsDroitNum); 
+		this->InsertEntryToIntNode(nh.mother,val,filsDroitNum);
+		
+		//On force l'écriture et on uping les pages
+		res = this->pf->ForcePages(noeud);
+		if(res !=0)
+		{return res;}
+		res = this->pf->UnpinPage(noeud);
+		if(res !=0)
+		{return res;}
+		res = this->pf->ForcePages(filsDroitNum);
+		if(res !=0)
+		{return res;}
+		res = this->pf->UnpinPage(filsDroitNum);
+		if(res !=0)
+		{return res;}			
+		
+		
+		 
 	}
 	
 return 0;	
@@ -599,7 +623,7 @@ int res;
 	//On instancie un noeud header dans le fils droit
 	ix_NoeudHeader nhFilsDroit;
 	nhFilsDroit.nbCleCrt = 0;
-	nhFilsDroit.mother = -1;
+	nhFilsDroit.mother = nh.mother;
 	//On recopie le noeud header dans la page
 	memcpy(pDataFilsDroit, &nhFilsDroit, sizeof(ix_NoeudHeader));
 
@@ -660,8 +684,8 @@ int res;
 		this->InsertKeyEmptyNode(newRacineNum, nouvelInsertion, ptrAvant, ptrApres);
 		
 		//On termine le chaînage
-		memcpy(ptrAvant, &noeud, sizeof(this->fh.taillePtr));
-		memcpy(ptrApres, &filsDroitNum, sizeof(this->fh.taillePtr));
+		memcpy(ptrAvant, &noeud, this->fh.taillePtr);
+		memcpy(ptrApres, &filsDroitNum, this->fh.taillePtr);
 		
 		//On modifie le parent des fils gauche et droit
 			//On doit recharger le noeuheader car il a été modifié
@@ -676,9 +700,6 @@ int res;
 		
 		//On change le numéro de la racine dans le file header
 		this->fh.racine = newRacineNum;
-		
-		//On change le numéro de la racine dans le file header
-		this->fh.racine = newRacineNum;		
 		
 		//On termine en incrémentant la hauteur de l'arbre
 		this->fh.hauteur++;
@@ -709,7 +730,20 @@ int res;
 	{
 
 		//On ajoute une clé dans un noeud interne
-		this->InsertEntryToIntNode(nh.mother,key,filsDroitNum); 
+		this->InsertEntryToIntNode(nh.mother,val,filsDroitNum); 
+		//On force l'écriture et on uping les pages
+		res = this->pf->ForcePages(noeud);
+		if(res !=0)
+		{return res;}
+		res = this->pf->UnpinPage(noeud);
+		if(res !=0)
+		{return res;}
+		res = this->pf->ForcePages(filsDroitNum);
+		if(res !=0)
+		{return res;}
+		res = this->pf->UnpinPage(filsDroitNum);
+		if(res !=0)
+		{return res;}			
 
 	}	
 	
@@ -732,7 +766,8 @@ RC IX_IndexHandle :: InsertEntryToLeaf(PageNum noeud, char *key)
 	//On récupère le noeud header
 	ix_NoeudHeader nh;
 	memcpy(&nh, pData, sizeof(ix_NoeudHeader));
-	
+
+
 	//On teste si la feuille est pleine
 	if(nh.nbCleCrt == this->fh.nbPointeurMax-1)
 		this->InsertEntryToLeafNodeSplit(noeud, key);
@@ -740,6 +775,8 @@ RC IX_IndexHandle :: InsertEntryToLeaf(PageNum noeud, char *key)
 	else
 		this->InsertEntryToLeafNodeNoSplit(noeud, key);
 	
+	this->pf->ForcePages(noeud);
+	this->pf->UnpinPage(noeud);
 	
 	return 0;
 	
@@ -749,6 +786,7 @@ RC IX_IndexHandle :: InsertEntryToLeaf(PageNum noeud, char *key)
 //Insert une clé dans un noeud interne
 RC IX_IndexHandle :: InsertEntryToIntNode(PageNum noeud, char *key, PageNum splitNoeud)
 {
+	int res;
 	
 	//On récupère la page 
 	PF_PageHandle *page = new PF_PageHandle();
@@ -769,6 +807,13 @@ RC IX_IndexHandle :: InsertEntryToIntNode(PageNum noeud, char *key, PageNum spli
 	else
 		this->InsertEntryToIntNodeNoSplit(noeud, key, splitNoeud);
 	
+	
+	res = this->pf->ForcePages(noeud);
+	if(res !=0)
+		return res;
+	res = this->pf->UnpinPage(noeud);	
+	if(res !=0)
+		return res;	
 	
 	return 0;	
 }
@@ -843,10 +888,127 @@ RC IX_IndexHandle :: ModifParent(PageNum noeud)
 		
 		
 	}
-	
-		this->pf->ForcePages(filsNum);
-		this->pf->UnpinPage(filsNum);
+
 	
 	
 	return 0;
 }
+
+
+//Insert une clé dans un noeud
+RC IX_IndexHandle :: InsertEntryToNode(PageNum noeud, char *key, int hauteur)
+{
+	//On teste à partir de la hauteur si noeud est une feuille
+	//Si oui, on fait une insertion dans une feuille
+
+
+	if(hauteur == this->fh.hauteur)
+		this->InsertEntryToLeaf(noeud, key);
+	
+	//Sinon, On fait une insertion dans un noeud interne
+	else
+		this->InsertEntryToInt1Node(noeud, key, hauteur);
+	
+	return 0;
+}
+
+//Va chercher le sous arbre dans lequel nous allons insérer notre clé
+RC IX_IndexHandle :: InsertEntryToInt1Node(PageNum noeud, char *key, int hauteur)
+{
+
+	//On charge la page
+	PF_PageHandle *page = new PF_PageHandle();
+	this->pf->GetThisPage(noeud, *page);
+	
+	//On récupère les données de la page
+	char *pData;
+	page->GetData(pData);
+	
+	//On récupère le noeud de la page
+	ix_NoeudHeader nh;
+	memcpy(&nh, pData, sizeof(ix_NoeudHeader));
+	
+	//On va parcourir l'ensemble des fils du noeud
+	int i;
+	int iVal;
+	int iKey;
+	PageNum ptr;
+	memcpy(&iKey, key, this->fh.tailleCle);
+	for(i = 1; i<=nh.nbCleCrt;i++)
+	{
+		//On pointe vers la clé à la position i
+		this->GetCle(i, pData);
+		
+		//On récupère la valeur de la clé
+		memcpy(&iVal, pData, this->fh.tailleCle);
+		
+		//On teste où insérer notre clé
+		if(iVal > iKey)
+		{
+			//On répointe au début du fichier
+			page->GetData(pData);
+			
+			//On pointe vers le pointeur avant ikey
+			this->GetPtrInf(i, pData);
+			
+			//On récupère le numéro de la page
+			memcpy(&ptr, pData, this->fh.taillePtr);
+			
+	
+			//On appel notre fonction InsertNode
+			this->InsertEntryToNode(ptr, key, hauteur+1);
+			
+			//On unpin la page
+			this->pf->UnpinPage(noeud);
+			
+			return 0;
+	
+			
+		}
+		
+		//Si on arrive à la fin du fichier
+		else if(iVal < iKey && i == nh.nbCleCrt)
+		{
+			
+			//On répointe au début du fichier
+			page->GetData(pData);
+			
+			//On pointe vers le pointeur après ikey
+			this->GetPtrSup(i, pData);
+			
+			//On récupère le numéro de la page
+			memcpy(&ptr, pData, this->fh.taillePtr);
+			
+
+			//On appel notre fonction InsertNode
+			this->InsertEntryToNode(ptr, key, hauteur+1);
+			
+			//On unpin la page
+			this->pf->UnpinPage(noeud);
+			return 0;
+		
+		}
+		
+		//On repointe au début du fichie
+		page->GetData(pData);
+	
+	}
+	
+	//On unpin la page
+	this->pf->UnpinPage(noeud);
+	
+	return 0;
+}	
+
+RC IX_IndexHandle :: InsertEntry(char *key)
+{
+
+		this->InsertEntryToNode(this->fh.racine, key, 1);
+
+	return 0;
+}
+
+
+
+
+

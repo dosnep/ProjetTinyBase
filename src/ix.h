@@ -93,6 +93,18 @@ public:
 	//Insert une clé dans un noeud interne
 	RC InsertEntryToIntNode(PageNum noeud, char *key, PageNum splitNoeud);	
 
+	//Insert une clé dans un noeud
+	RC InsertEntryToNode(PageNum noeud, char *key, int hauteur);	
+
+	//Va chercher le sous arbre dans lequel nous allons insérer notre clé
+	RC InsertEntryToInt1Node(PageNum noeud, char *key, int hauteur);	
+
+	//Insère une clé
+	RC InsertEntry(char *key);	
+
+
+
+
 
 PF_FileHandle *pf;
 bool viableFile; //bool qui teste si le fichier a été ouvert
