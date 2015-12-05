@@ -34,7 +34,7 @@ using namespace std;
 #define BADFILE      "/abc/def/xyz"   // bad file name
 #define STRLEN       39               // length of strings to index
 #define FEW_ENTRIES  20
-#define MANY_ENTRIES 500
+#define MANY_ENTRIES 100
 #define NENTRIES     5000             // Size of values array
 #define PROG_UNIT    200              // how frequently to give progress
 // reports when adding lots of entries
@@ -500,15 +500,14 @@ RC Test1(void)
    RC rc;
    int index=0;
    IX_IndexHandle ih;
-	/**
-	PF_PageHandle *page = new PF_PageHandle();
+	
+/**	PF_PageHandle *page = new PF_PageHandle();
 	ix_NoeudHeader nh;
 	int indiceCle;
 	char key[10];
 	int ikey;
 	RID rid;
-	memcpy(key, &ikey, sizeof(int));
-	**/
+**/	
    printf("Test 1: create, open, close, delete an index... \n");
 
    if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
@@ -516,7 +515,9 @@ RC Test1(void)
 
 
 			return (rc);
-			/**			
+				
+/**			
+			
 		     for(ikey = 1; ikey<9; ikey++)
 		     {
 				memcpy(key, &ikey, sizeof(int)); 
@@ -524,27 +525,35 @@ RC Test1(void)
 				 
 			 }
 
-			ikey = 2;
+			ikey = 10;
 			memcpy(key, &ikey, sizeof(int));
 			ih.InsertEntry(key,rid);
+
+	ih.pf->GetThisPage(18,*page);
+	char *data;
+	page->GetData(data);
+	memcpy(&nh, data, sizeof(ix_NoeudHeader));			
+	printf("voisin gauche : %d, voisin droit : %d \n",nh.left, nh.right);
+	ih.pf->UnpinPage(1);	
+
+
 
 
 		printf("hauteur de l'arbre : %d\n",ih.fh.hauteur);	
 
 //Feuille gauche
-	ih.pf->GetThisPage(1,*page);
-	char *data;
+	ih.pf->GetThisPage(18,*page);
 	page->GetData(data);
 	memcpy(&nh, data, sizeof(ix_NoeudHeader));
 	//Test le noeud header
 	printf("FEUILLE GAUCHE\n==========\nnbCleCrt : %d, mother : %d\n",nh.nbCleCrt,nh.mother);
-indiceCle = 1;
+indiceCle = 3;
 ih.GetCle(indiceCle,data);
 int ival;
 memcpy(&ival, data, sizeof(int));
 printf("valeur de la clé à l'indice %d : %d\n",indiceCle,ival);
 page->GetData(data);
-ih.GetPtrInf(ival, data);
+ih.GetPtrInf(indiceCle, data);
 memcpy(&ival, data, sizeof(int));
 printf("bucket de la clé à l'indice %d : %d\n",indiceCle,ival);
 

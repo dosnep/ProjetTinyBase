@@ -33,7 +33,8 @@ struct noeudheader{
 int nbCleCrt;	//Nombre courant de clé dans le noeud (ce qui veut dire qu'il y a nbclecrt+1 pointeurs)
 PageNum mother;	//Noeud parent du noeud courant
 int niveau;		//si niveau = 0, nous sommes à la racine, sinon si niveau = h-1 nous sommes sur une feuille
-
+PageNum left; //Voisin de gauche
+PageNum right; //Voisin de droite
 };
 
 //Header d'un bucket

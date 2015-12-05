@@ -296,6 +296,16 @@ RC IX_IndexHandle :: InsertEntryToLeafNodeNoSplit(PageNum noeud, char *key,const
 		memcpy(&bucket, ptrAvant, this->fh.taillePtr);
 		this->InsertRIDInBucket(bucket, rid);
 
+		//On recharge le noeud header
+		memcpy(&nh, pData, sizeof(ix_NoeudHeader));
+
+		//Pour le moment il n'y a qu'une feuille donc aucun voisins.
+		nh.left = -1;
+		nh.right = -1;
+
+		//On écrit le noeud header dans le fichier
+		memcpy(pData, &nh, sizeof(ix_NoeudHeader));
+
 		//On force l'écriture et on unpin
 		res = this->pf->ForcePages(noeud);
 		if(res !=0)
@@ -635,6 +645,7 @@ RC IX_IndexHandle :: InsertEntryToLeafNodeSplit(PageNum noeud, char *key,const R
 			//On insère le rid dans le bucket
 			this->InsertRIDInBucket(bucket,rid);
 
+
 			//On teste si notre feuille est la racine
 			if(this->fh.hauteur == 1)
 			{	
@@ -670,13 +681,18 @@ RC IX_IndexHandle :: InsertEntryToLeafNodeSplit(PageNum noeud, char *key,const R
 				memcpy(ptrApres, &filsDroitNum, this->fh.taillePtr);
 				
 
-				//On modifie le parent des fils gauche et droit
+				//On modifie le parent des fils gauche et droit et les voisins
 					//On doit recharger le noeuheader car il a été modifié
 				memcpy(&nh, pData, sizeof(ix_NoeudHeader));
 				nh.mother = newRacineNum;
 					//On doit recharger le noeudheader car il a été modifié 
 				memcpy(&nhFilsDroit, pDataFilsDroit, sizeof(ix_NoeudHeader));
 				nhFilsDroit.mother = newRacineNum;
+				
+				nhFilsDroit.right = nh.right;
+				nh.right = filsDroitNum;
+				nhFilsDroit.left = noeud;
+				
 				//On écrit les headers dans les pages
 				memcpy(pData, &nh, sizeof(ix_NoeudHeader));
 				memcpy(pDataFilsDroit, &nhFilsDroit, sizeof(ix_NoeudHeader));
@@ -713,6 +729,20 @@ RC IX_IndexHandle :: InsertEntryToLeafNodeSplit(PageNum noeud, char *key,const R
 			{
 				//On ajoute une clé dans un noeud interne
 				this->InsertEntryToIntNode(nh.mother,val,filsDroitNum);
+			
+				//On modifie les voisins
+					//On doit recharger le noeuheader car il a été modifié
+				memcpy(&nh, pData, sizeof(ix_NoeudHeader));
+					//On doit recharger le noeudheader car il a été modifié 
+				memcpy(&nhFilsDroit, pDataFilsDroit, sizeof(ix_NoeudHeader));
+	
+				nhFilsDroit.right = nh.right;
+				nh.right = filsDroitNum;
+				nhFilsDroit.left = noeud;
+				
+				//On écrit les headers dans les pages
+				memcpy(pData, &nh, sizeof(ix_NoeudHeader));
+				memcpy(pDataFilsDroit, &nhFilsDroit, sizeof(ix_NoeudHeader));			
 				
 				//On force l'écriture et on uping les pages
 				res = this->pf->ForcePages(noeud);
