@@ -44,7 +44,7 @@ RC IX_Manager :: CreateIndex(const char *fileName, int indexNo, AttrType attrTyp
 	fh.taillePtr = sizeof(int);
 	fh.racine = -1; //Pour le moment il n'y a pas de racine
 	fh.hauteur = 0; //Pour le moment l'arbre est vide
-	fh.nbPointeurMax = 5;
+	fh.nbPointeurMax = 4;
 	
 	
 	//Nous allons ouvrir le nouveau fichier

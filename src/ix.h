@@ -23,7 +23,7 @@ int taillePtr;	//Taille d'un pointeur
 PageNum racine; //racine de l'arbre b-tree
 int hauteur; //hauteur de l'abre b-tree
 int nbPointeurMax;	//Nombre de pointeurs dans un noeud (ce qui veut dire qu'il y a nbPointeursMax-1 clés)
-
+int nbRidBucketMax; //Nombre max de rid dans un bucket
 };
 
 //Header d'un noeud de l'abre b-tree
@@ -36,6 +36,13 @@ int niveau;		//si niveau = 0, nous sommes à la racine, sinon si niveau = h-1 no
 
 };
 
+//Header d'un bucket
+typedef struct buckerheader ix_BucketHeader;
+struct buckerheader{
+	
+int nbRidCrt; //Nombre de rid dans le bucket
+
+};
 
 //
 // IX_IndexHandle: IX Index File interface
@@ -75,14 +82,17 @@ public:
 	//extrait la clé du milieu d'un noeud,modifie le fils gauche, modifie le fils droit
 	RC ExtractKey(const PageNum noeud, char* &key, const PageNum splitNoeud);
 
+	RC ExtractKeyLeaf(const PageNum noeud, char* &key, const PageNum splitNoeud);
+
+
 	//Insert une clé dans une feuille sans éclatement
-	RC InsertEntryToLeafNodeNoSplit(PageNum noeud, char *key);
+	RC InsertEntryToLeafNodeNoSplit(PageNum noeud, char *key,const RID &rid);
 	
 	//Insert une clé dans une feuille avec éclatement
-	RC InsertEntryToLeafNodeSplit(PageNum noeud, char *key);
+	RC InsertEntryToLeafNodeSplit(PageNum noeud, char *key,const RID &rid);
 
 	//Insert une clé dans une feuille
-	RC InsertEntryToLeaf(PageNum noeud, char *key);
+	RC InsertEntryToLeaf(PageNum noeud, char *key,const RID &rid);
 
 	//Insert une clé dans un parent sans éclatement
 	RC InsertEntryToIntNodeNoSplit(PageNum noeud, char *key, PageNum splitNoeud);
@@ -94,13 +104,19 @@ public:
 	RC InsertEntryToIntNode(PageNum noeud, char *key, PageNum splitNoeud);	
 
 	//Insert une clé dans un noeud
-	RC InsertEntryToNode(PageNum noeud, char *key, int hauteur);	
+	RC InsertEntryToNode(PageNum noeud, char *key, int hauteur,const RID &rid);	
 
 	//Va chercher le sous arbre dans lequel nous allons insérer notre clé
-	RC InsertEntryToInt1Node(PageNum noeud, char *key, int hauteur);	
+	RC InsertEntryToInt1Node(PageNum noeud, char *key, int hauteur,const RID &rid);	
 
+	//Insère un rid dans un bucket
+	RC InsertRIDInBucket(PageNum bucket, RID rid);
+	
+	//Cherche si key est présent dans la feuille leaf
+	bool EstPresent(PageNum leaf, char *key,char *&bucket);
 
-
+	//Initialise le bucket en lui insérant un noeud header
+	RC InitBucket(char *&ptr);
 
 
 

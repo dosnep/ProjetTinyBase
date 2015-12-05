@@ -33,8 +33,8 @@ using namespace std;
 #define FILENAME     "testrel"        // test file name
 #define BADFILE      "/abc/def/xyz"   // bad file name
 #define STRLEN       39               // length of strings to index
-#define FEW_ENTRIES  100
-#define MANY_ENTRIES 20
+#define FEW_ENTRIES  20
+#define MANY_ENTRIES 500
 #define NENTRIES     5000             // Size of values array
 #define PROG_UNIT    200              // how frequently to give progress
 // reports when adding lots of entries
@@ -500,15 +500,15 @@ RC Test1(void)
    RC rc;
    int index=0;
    IX_IndexHandle ih;
+	/**
 	PF_PageHandle *page = new PF_PageHandle();
 	ix_NoeudHeader nh;
+	int indiceCle;
 	char key[10];
 	int ikey;
 	RID rid;
-
-
-	int indiceCle;
 	memcpy(key, &ikey, sizeof(int));
+	**/
    printf("Test 1: create, open, close, delete an index... \n");
 
    if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
@@ -516,14 +516,17 @@ RC Test1(void)
 
 
 			return (rc);
-						
-		     for(ikey = 1; ikey<10; ikey++)
+			/**			
+		     for(ikey = 1; ikey<9; ikey++)
 		     {
 				memcpy(key, &ikey, sizeof(int)); 
 				ih.InsertEntry(key,rid); 
 				 
 			 }
 
+			ikey = 2;
+			memcpy(key, &ikey, sizeof(int));
+			ih.InsertEntry(key,rid);
 
 
 		printf("hauteur de l'arbre : %d\n",ih.fh.hauteur);	
@@ -540,6 +543,10 @@ ih.GetCle(indiceCle,data);
 int ival;
 memcpy(&ival, data, sizeof(int));
 printf("valeur de la clé à l'indice %d : %d\n",indiceCle,ival);
+page->GetData(data);
+ih.GetPtrInf(ival, data);
+memcpy(&ival, data, sizeof(int));
+printf("bucket de la clé à l'indice %d : %d\n",indiceCle,ival);
 
 
 //feuille droite
@@ -553,6 +560,7 @@ indiceCle = 1;
 ih.GetCle(indiceCle,data);
 memcpy(&ival, data, sizeof(int));
 printf("valeur de la clé à l'indice %d : %d\n",indiceCle,ival);	
+
 	
 
 //Racine
@@ -579,7 +587,7 @@ printf("pointeur supérieur: %d\n",ival);
 ih.pf->UnpinPage(1);
 ih.pf->UnpinPage(3);
 ih.pf->UnpinPage(2);
-
+**/
 
 	if((rc = ixm.CloseIndex(ih)))
 		return rc;
