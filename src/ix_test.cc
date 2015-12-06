@@ -33,7 +33,7 @@ using namespace std;
 #define FILENAME     "testrel"        // test file name
 #define BADFILE      "/abc/def/xyz"   // bad file name
 #define STRLEN       39               // length of strings to index
-#define FEW_ENTRIES  20
+#define FEW_ENTRIES  10
 #define MANY_ENTRIES 100
 #define NENTRIES     5000             // Size of values array
 #define PROG_UNIT    200              // how frequently to give progress
@@ -71,10 +71,10 @@ RC AddRecs(RM_FileHandle &fh, int nRecs);
 RC DeleteIntEntries(IX_IndexHandle &ih, int nEntries);
 RC DeleteFloatEntries(IX_IndexHandle &ih, int nEntries);
 RC DeleteStringEntries(IX_IndexHandle &ih, int nEntries);
-RC VerifyIntIndex(IX_IndexHandle &ih, int nStart, int nEntries, int bExists);
 RC PrintIndex(IX_IndexHandle &ih);
-
 **/
+RC VerifyIntIndex(IX_IndexHandle &ih, int nStart, int nEntries, int bExists);
+
 //
 // Array of pointers to the test functions
 //
@@ -219,13 +219,15 @@ RC InsertIntEntries(IX_IndexHandle &ih, int nEntries)
    RC  rc;
    int i;
    int value;
+   char key[10];
 
    printf("             Adding %d int entries\n", nEntries);
    ran(nEntries);
    for(i = 0; i < nEntries; i++) {
       value = values[i] + 1;
+      memcpy(key, &value, sizeof(int));
       RID rid(value, value*2);
-      if ((rc = ih.InsertEntry((void *)&value, rid)))
+      if ((rc = ih.InsertEntry(key, rid)))
          return (rc);
 
       if((i + 1) % PROG_UNIT == 0){
@@ -422,6 +424,7 @@ RC DeleteStringEntries(IX_IndexHandle &ih, int nEntries)
 //     If bExists == 0, verify that entries do NOT exist (you can
 //     use this to test deleting entries).
 //
+**/
 
 RC VerifyIntIndex(IX_IndexHandle &ih, int nStart, int nEntries, int bExists)
 {
@@ -443,38 +446,40 @@ RC VerifyIntIndex(IX_IndexHandle &ih, int nStart, int nEntries, int bExists)
          printf("Verify error: opening scan\n");
          return (rc);
       }
-
       rc = scan.GetNextEntry(rid);
       if (!bExists && rc == 0) {
          printf("Verify error: found non-existent entry %d\n", value);
-         return (IX_EOF);  // What should be returned here?
+         return (1);  // What should be returned here?
       }
-      else if (bExists && rc == IX_EOF) {
+      
+      else if (bExists && rc == 1) {
          printf("Verify error: entry %d not found\n", value);
-         return (IX_EOF);  // What should be returned here?
+         return (1);  // What should be returned here?
       }
-      else if (rc != 0 && rc != IX_EOF)
+      
+      else if (rc != 0 && rc != 1)
          return (rc);
 
       if (bExists && rc == 0) {
+
          // Did we get the right entry?
          if ((rc = rid.GetPageNum(pageNum)) ||
                (rc = rid.GetSlotNum(slotNum)))
-            return (rc);
-
+					return (rc);
+/**
          if (pageNum != value || slotNum != (value*2)) {
             printf("Verify error: incorrect rid (%d,%d) found for entry %d\n",
                   pageNum, slotNum, value);
-            return (IX_EOF);  // What should be returned here?
+            return (1);  // What should be returned here?
          }
-
+**/
          // Is there another entry?
          rc = scan.GetNextEntry(rid);
          if (rc == 0) {
             printf("Verify error: found two entries with same value %d\n", value);
-            return (IX_EOF);  // What should be returned here?
+            return (1);  // What should be returned here?
          }
-         else if (rc != IX_EOF)
+         else if (rc != 1)
             return (rc);
       }
 
@@ -486,7 +491,7 @@ RC VerifyIntIndex(IX_IndexHandle &ih, int nStart, int nEntries, int bExists)
 
    return (0);
 }
-**/
+
 
 /////////////////////////////////////////////////////////////////////
 // Sample test functions follow.                                   //
@@ -500,103 +505,46 @@ RC Test1(void)
    RC rc;
    int index=0;
    IX_IndexHandle ih;
-	
-/**	PF_PageHandle *page = new PF_PageHandle();
-	ix_NoeudHeader nh;
-	int indiceCle;
-	char key[10];
-	int ikey;
 	RID rid;
-**/	
+	IX_IndexScan scan;
+	int ikey;
+	char key[10];
    printf("Test 1: create, open, close, delete an index... \n");
 
    if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)))
-
-
 			return (rc);
+int i;
+	for( i = 0; i< 10; i ++)
+	{
+		RID rid(i,i+1);
+		ikey = i;
+		memcpy(key, &ikey, sizeof(int));
+		ih.InsertEntry(key,rid); 
+	}
+
+ikey = 4;
+memcpy(key, &ikey,sizeof(int));
 				
-/**			
-			
-		     for(ikey = 1; ikey<9; ikey++)
-		     {
-				memcpy(key, &ikey, sizeof(int)); 
-				ih.InsertEntry(key,rid); 
-				 
-			 }
-
-			ikey = 10;
-			memcpy(key, &ikey, sizeof(int));
-			ih.InsertEntry(key,rid);
-
-	ih.pf->GetThisPage(18,*page);
-	char *data;
-	page->GetData(data);
-	memcpy(&nh, data, sizeof(ix_NoeudHeader));			
-	printf("voisin gauche : %d, voisin droit : %d \n",nh.left, nh.right);
-	ih.pf->UnpinPage(1);	
-
-
-
-
-		printf("hauteur de l'arbre : %d\n",ih.fh.hauteur);	
-
-//Feuille gauche
-	ih.pf->GetThisPage(18,*page);
-	page->GetData(data);
-	memcpy(&nh, data, sizeof(ix_NoeudHeader));
-	//Test le noeud header
-	printf("FEUILLE GAUCHE\n==========\nnbCleCrt : %d, mother : %d\n",nh.nbCleCrt,nh.mother);
-indiceCle = 3;
-ih.GetCle(indiceCle,data);
-int ival;
-memcpy(&ival, data, sizeof(int));
-printf("valeur de la clé à l'indice %d : %d\n",indiceCle,ival);
-page->GetData(data);
-ih.GetPtrInf(indiceCle, data);
-memcpy(&ival, data, sizeof(int));
-printf("bucket de la clé à l'indice %d : %d\n",indiceCle,ival);
-
-
-//feuille droite
-	ih.pf->GetThisPage(2,*page);
-	page->GetData(data);
-	memcpy(&nh, data, sizeof(ix_NoeudHeader));
-	//Test le noeud header
-	printf("FEUILLE DROIT\n==========\nnbCleCrt : %d, mother : %d\n",nh.nbCleCrt,nh.mother);
-
-indiceCle = 1;	
-ih.GetCle(indiceCle,data);
-memcpy(&ival, data, sizeof(int));
-printf("valeur de la clé à l'indice %d : %d\n",indiceCle,ival);	
-
+    scan.OpenScan(ih, NE_OP,key);
+    int p, s;
+	while(rc !=1)
+	{
+		rc = scan.GetNextEntry(rid);
+		rid.GetPageNum(p); rid.GetSlotNum(s);
+		if(rc != 1)printf("page : %d, slot : %d\n",p,s);
 	
-
-//Racine
-	ih.pf->GetThisPage(3,*page);
-	page->GetData(data);
-	memcpy(&nh, data, sizeof(ix_NoeudHeader));
-	//Test le noeud header
-	printf("RACINE\n==========\nnbCleCrt : %d, mother : %d\n",nh.nbCleCrt,nh.mother);	
+	}
 
 
-indiceCle = 1;	
-ih.GetCle(indiceCle,data);
-memcpy(&ival, data, sizeof(int));
-printf("valeur de la clé à l'indice %d : %d\n",indiceCle,ival);	
-page->GetData(data);
-ih.GetPtrInf(indiceCle,data);
-memcpy(&ival, data, sizeof(int));
-printf("pointeur inférieur: %d\n",ival);	
-page->GetData(data);
-ih.GetPtrSup(indiceCle,data);
-memcpy(&ival, data, sizeof(int));
-printf("pointeur supérieur: %d\n",ival);	
-
-ih.pf->UnpinPage(1);
-ih.pf->UnpinPage(3);
-ih.pf->UnpinPage(2);
-**/
+	PF_PageHandle *page = new PF_PageHandle();
+	ih.pf->GetThisPage(1,*page);
+	char *pData;
+	page->GetData(pData);
+	ix_NoeudHeader nh;
+	memcpy(&nh, pData, sizeof(ix_NoeudHeader));
+	printf("nbCle crt : %d, page droite : %d\n",nh.nbCleCrt, nh.right);
+	ih.pf->UnpinPage(1);
 
 	if((rc = ixm.CloseIndex(ih)))
 		return rc;
@@ -625,17 +573,18 @@ RC Test2(void)
    if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
          (rc = InsertIntEntries(ih, FEW_ENTRIES))||
-         (rc = ixm.CloseIndex(ih))||
-         (rc = ixm.OpenIndex(FILENAME, index, ih))||
-/**
+        // (rc = ixm.CloseIndex(ih))||
+         //(rc = ixm.OpenIndex(FILENAME, index, ih))||
+
+
          // ensure inserted entries are all there
-         (rc = VerifyIntIndex(ih, 0, FEW_ENTRIES, TRUE)) ||
+        (rc = VerifyIntIndex(ih, 0, FEW_ENTRIES, TRUE))||
 
          // ensure an entry not inserted is not there
-         (rc = VerifyIntIndex(ih, FEW_ENTRIES, 1, FALSE)) ||
-  **/ 
-         (rc = ixm.CloseIndex(ih)))
-      return (rc);
+         (rc = VerifyIntIndex(ih, FEW_ENTRIES, 1, FALSE)))
+   
+         //(rc = ixm.CloseIndex(ih)))
+			return (rc);
 
    LsFiles((char*)FILENAME);
 

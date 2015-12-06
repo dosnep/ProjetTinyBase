@@ -11,6 +11,21 @@ IX_IndexHandle :: IX_IndexHandle()
 	this->pf = NULL;
 	
 };
+
+IX_IndexHandle :: IX_IndexHandle(const PF_FileHandle &pf, const ix_FileHeader &fh)
+{
+this->pf = new PF_FileHandle(pf);
+this->fh.attrType = fh.attrType; 
+this->fh.tailleCle = fh.tailleCle;	
+this->fh.taillePtr = fh.taillePtr;	
+this->fh.racine = fh.racine; 
+this->fh.hauteur = fh.hauteur;
+this->fh.nbPointeurMax = fh.nbPointeurMax;
+this->fh.nbRidBucketMax = fh.nbRidBucketMax;
+		
+}
+
+
 IX_IndexHandle :: ~IX_IndexHandle()
 {
 };

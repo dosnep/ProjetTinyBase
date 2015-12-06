@@ -51,6 +51,7 @@ int nbRidCrt; //Nombre de rid dans le bucket
 class IX_IndexHandle {
 public:
     IX_IndexHandle();
+	IX_IndexHandle(const PF_FileHandle &pf, const ix_FileHeader &fh);    
     ~IX_IndexHandle();
 
     // Insert a new index entry
@@ -139,15 +140,31 @@ public:
     // Open index scan
     RC OpenScan(const IX_IndexHandle &indexHandle,
                 CompOp compOp,
-                void *value,
-                ClientHint  pinHint = NO_HINT);
+                void *value);
 
     // Get the next matching entry return IX_EOF if no more matching
     // entries.
     RC GetNextEntry(RID &rid);
+    
+    bool EstUnBonRecord(char *key);
 
     // Close index scan
     RC CloseScan();
+   
+ private :
+ bool isOpen;
+IX_IndexHandle *ih; 
+CompOp     compOp;
+int valInt;
+float valFloat;
+char *valString;
+void *value;
+PageNum currentLeaf; //feuille courrante
+int indiceCle; //Indice de clé de la feuille  
+PageNum currentBucket; //Bucket courrant
+int indiceRid; //Indice rid dans le bucket
+    
+    
 };
 
 //
