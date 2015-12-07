@@ -564,6 +564,7 @@ memcpy(key, &ikey,sizeof(int));
 //
 RC Test2(void)
 {
+	/**
    RC rc;
    IX_IndexHandle ih;
    int index=0;
@@ -592,7 +593,7 @@ RC Test2(void)
       return (rc);
 
    printf("Passed Test 2\n\n");
-
+**/
    return (0);
 
 }
