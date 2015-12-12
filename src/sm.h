@@ -15,6 +15,30 @@
 #include "rm.h"
 #include "ix.h"
 
+typedef struct relcat relcat;
+struct relcat{
+
+char relName[20]; //Nom de la relation
+int tupleLength;	//Taille du tuple (en Bytes)
+attrCount;	//Nb d'attributs dans le tuple
+	
+};
+
+typedef struct attrcat attrcat;
+struct attrcat{
+	
+char relName[20];	//Nom de la relation où se situe l'attribut
+char attrName[20];	//Nom de l'attribut
+int offset;	//Décalage de l'attribut par rapport au début du tuple (en Bytes)
+AttrType attrType;	//Type de l'attribut (String, int ou float)
+int attrLength;	//Taille de l'attribut
+int indexNo;	//Numéro de l'index de l'attribut
+
+	
+};
+
+
+
 //
 // SM_Manager: provides data management
 //

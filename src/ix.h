@@ -38,8 +38,8 @@ PageNum right; //Voisin de droite
 };
 
 //Header d'un bucket
-typedef struct buckerheader ix_BucketHeader;
-struct buckerheader{
+typedef struct bucketheader ix_BucketHeader;
+struct bucketheader{
 	
 int nbRidCrt; //Nombre de rid dans le bucket
 
