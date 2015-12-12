@@ -20,7 +20,7 @@ struct relcat{
 
 char relName[20]; //Nom de la relation
 int tupleLength;	//Taille du tuple (en Bytes)
-attrCount;	//Nb d'attributs dans le tuple
+int attrCount;	//Nb d'attributs dans le tuple
 	
 };
 
@@ -71,6 +71,10 @@ public:
                    const char *value);            //   value
 
 private:
+IX_Manager ixm;
+RM_Manager rmm;
+RM_FileHandle relcatFH;
+RM_FileHandle attrcatFH;
 };
 
 //

@@ -10,10 +10,11 @@
 #include "sm.h"
 #include "ix.h"
 #include "rm.h"
+#include "unistd.h"
 
 using namespace std;
 
-SM_Manager::SM_Manager(IX_Manager &ixm, RM_Manager &rmm)
+SM_Manager::SM_Manager(IX_Manager &ixm, RM_Manager &rmm) : ixm(ixm), rmm(rmm)
 {
 }
 
@@ -23,11 +24,45 @@ SM_Manager::~SM_Manager()
 
 RC SM_Manager::OpenDb(const char *dbName)
 {
-    return (0);
+	int res;
+	//On va se placer dans le répertoire de la bd
+	chdir(dbName);
+	
+	//Imprime le chemin où l'on se trouve
+    system ("pwd");
+
+	//On va charger les catalogues
+	res = rmm.OpenFile("relcat", this->relcatFH);
+	if(res != 0)
+		return res;
+
+	res = rmm.OpenFile("attrcat", this->attrcatFH);
+	if(res != 0)
+		return res;
+	
+   return (0);
 }
 
 RC SM_Manager::CloseDb()
 {
+	
+	int res;
+	//On remonte dans la répertoire précédent
+	chdir("..");
+
+	//Imprime le chemin où l'on se trouve
+    system ("pwd");
+	
+
+	//On va charger les catalogues
+	res = rmm.CloseFile(this->relcatFH);
+	if(res != 0)
+		return res;
+
+	res = rmm.CloseFile(this->attrcatFH);
+	if(res != 0)
+		return res;	
+	
     return (0);
 }
 

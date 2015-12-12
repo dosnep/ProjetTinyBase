@@ -9,7 +9,7 @@
 #include <cstdio>
 #include <cstring>
 #include <unistd.h>
-#include "redbase.h"
+#include "tinybase.h"
 #include "rm.h"
 #include "sm.h"
 
@@ -18,9 +18,8 @@ using namespace std;
 //
 // main
 //
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-    char *dbname;
     RC rc;
 
     // Look for 2 arguments.  The first is always the name of the program
@@ -31,11 +30,22 @@ main(int argc, char *argv[])
         exit(1);
     }
 
-    // *********************************
-    //
-    // Fair amount to be filled in here!!
-    //
-    // *********************************
+      // initialize TinyBase components
+      PF_Manager pfm;
+      RM_Manager rmm(pfm);
+      IX_Manager ixm(pfm);
+      SM_Manager smm(ixm, rmm);
+      //QL_Manager qlm(smm, ixm, rmm);
+      // open the database
+      if ((rc = smm.OpenDb(argv[1])))
+			return rc;
+      // call the parser
+      //RBparse(pfm, smm, qlm);
+      // close the database
+      if ((rc = smm.CloseDb()))
+		return rc;
+
 
     cout << "Bye.\n";
+exit(0);
 }
