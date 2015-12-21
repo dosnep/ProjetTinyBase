@@ -6,11 +6,9 @@
 
 #include <cstdio>
 #include <iostream>
-#include "tinybase.h"
 #include "sm.h"
-#include "ix.h"
-#include "rm.h"
 #include "unistd.h"
+#include "stddef.h"
 
 using namespace std;
 
@@ -32,9 +30,11 @@ RC SM_Manager::OpenDb(const char *dbName)
     system ("pwd");
 
 	//On va charger les catalogues
-	res = rmm.OpenFile("relcat", this->relcatFH);
+	res = rmm.OpenFile("relcat", relcatFH);
 	if(res != 0)
-		return res;
+		return res;             	
+			
+		
 
 	res = rmm.OpenFile("attrcat", this->attrcatFH);
 	if(res != 0)
@@ -190,15 +190,164 @@ RC SM_Manager::Set(const char *paramName, const char *value)
 
 RC SM_Manager::Help()
 {
-    cout << "Help\n";
-    return (0);
+
+RM_FileScan fs;
+RM_Record rec;
+int res;
+DataAttrInfo *attributes = new DataAttrInfo[3];
+int attrCount;
+RM_FileHandle rfh;
+char *pData;
+char *name = new char[MAXNAME+1];
+strcpy(name,"relcat");
+attrcat tmp;
+res = fs.OpenScan(this->attrcatFH,STRING,sizeof(name),offsetof(attrcat,relName), EQ_OP,name, NO_HINT);
+if(res != 0)
+	return res;
+
+res = 0;
+//On récupère l'ensemble des attributs pour la table relcat
+int i = 0;
+while(res != RM_EOF)
+{	res = fs.GetNextRec(rec);
+		if(res==RM_EOF)
+			break;
+
+	rec.GetData(pData);
+	memcpy(&tmp, pData, sizeof(attrcat));
+	
+	attributes[i].offset = tmp.offset;
+	attributes[i].attrType = tmp.attrType;
+	attributes[i].attrLength = tmp.attrLength;
+	attributes[i].indexNo = tmp.indexNo;
+	strcpy(attributes[i].relName,tmp.relName);
+	strcpy(attributes[i].attrName,tmp.attrName);
+	i++;
+	
+}
+attrCount = 3;
+Printer p(attributes, attrCount);
+//On imprime le header des attributs
+p.PrintHeader(cout);
+//On ferme le scan
+fs.CloseScan();
+
+//On ouvre une nouveau scan sur le catalogue des relations
+res = fs.OpenScan(this->relcatFH,STRING,sizeof(name),offsetof(relcat,relName), NO_OP,name, NO_HINT);
+if(res != 0)
+	return res;
+	
+while(res != RM_EOF)
+{	res = fs.GetNextRec(rec);
+		if(res==RM_EOF)
+			break;
+		
+		//On récupère les données de l'enregistrement
+		rec.GetData(pData);
+		
+		//On affiche les données
+		p.Print(cout, pData);
+	
+}
+//On ferme le scan
+fs.CloseScan();
+
+//On imprime le footer
+p.PrintFooter(cout);
+
+return 0;
 }
 
 RC SM_Manager::Help(const char *relName)
 {
-    cout << "Help\n"
-         << "   relName=" << relName << "\n";
-    return (0);
+RM_FileScan fs;
+RM_Record rec;
+int res;
+int attrCount;
+RM_FileHandle rfh;
+char *pData;
+char *name = new char[MAXNAME+1];
+strcpy(name,relName);
+attrcat tmp;
+relcat tmp2;
+
+//Il faut aller chercher dans le catalogue des relations le nombres d'attributs de relName
+//On ouvre un scan
+res = fs.OpenScan(this->relcatFH,STRING,sizeof(name),offsetof(relcat,relName), EQ_OP,name, NO_HINT);
+while(res != RM_EOF)
+{	res = fs.GetNextRec(rec);
+		if(res==RM_EOF)
+			break;
+
+	rec.GetData(pData);
+	memcpy(&tmp2, pData, sizeof(relcat));
+	attrCount = tmp2.attrCount;	
+	printf("val : %d\n", attrCount);
+
+	
+}
+//On ferme le scan
+fs.CloseScan();
+
+DataAttrInfo *attributes = new DataAttrInfo[attrCount];
+
+res = fs.OpenScan(this->attrcatFH,STRING,sizeof(name),offsetof(attrcat,relName), EQ_OP,name, NO_HINT);
+if(res != 0)
+	return res;
+
+res = 0;
+//On récupère l'ensemble des attributs pour la table relName
+int i = 0;
+while(res != RM_EOF)
+{	res = fs.GetNextRec(rec);
+		if(res==RM_EOF)
+			break;
+
+	rec.GetData(pData);
+	memcpy(&tmp, pData, sizeof(attrcat));
+	
+	attributes[i].offset = tmp.offset;
+	attributes[i].attrType = tmp.attrType;
+	attributes[i].attrLength = tmp.attrLength;
+	attributes[i].indexNo = tmp.indexNo;
+	strcpy(attributes[i].relName,tmp.relName);
+	strcpy(attributes[i].attrName,tmp.attrName);
+	i++;
+	
+}
+Printer p(attributes, attrCount);
+//On imprime le header des attributs
+p.PrintHeader(cout);
+//On ferme le scan
+fs.CloseScan();
+
+//Il faut ouvrir la table  relName
+rmm.OpenFile(relName,rfh);
+
+//On ouvre une nouveau scan sur les tuples de la table relName
+res = fs.OpenScan(rfh,STRING,sizeof(name),offsetof(relcat,relName), NO_OP,name, NO_HINT);
+if(res != 0)
+	return res;
+	
+while(res != RM_EOF)
+{	res = fs.GetNextRec(rec);
+		if(res==RM_EOF)
+			break;
+		
+		//On récupère les données de l'enregistrement
+		rec.GetData(pData);
+		
+		//On affiche les données
+		p.Print(cout, pData);
+	
+}
+//On ferme le scan
+fs.CloseScan();
+
+//On imprime le footer
+p.PrintFooter(cout);
+
+return 0;
 }
 
 void SM_PrintError(RC rc)

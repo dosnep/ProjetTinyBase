@@ -1,53 +1,112 @@
-#include "rm_rid.h"
+//
+// File:        rm_rid.cc
+// Description: RID class implementation
+// Author:      Hyunjung Park (hyunjung@stanford.edu)
+//
 
-///////CONSTRUCTEURS ET DESTRUCTEUR
-//constructeur sans arguments
-RID :: RID()
+#include "rm_internal.h"
+
+// 
+// RID
+//
+// Desc: Default Constructor
+//
+RID::RID()
 {
-	this->pageNum = -1;
-	this->slotNum = -1;
-	this->viableRid = false;
-};
+   pageNum = 0;
+   slotNum = 0;
+}
 
-//constructeur avec arguments
-RID :: RID(const PageNum &pageNum, const SlotNum &slotNum)
+// 
+// RID
+//
+// Desc: Constructor
+//
+RID::RID(PageNum _pageNum, SlotNum _slotNum)
 {
-	this->pageNum = pageNum;
-	this->slotNum = slotNum;
-	this->viableRid = true;
+   pageNum = _pageNum;
+   slotNum = _slotNum;
+}
 
-};
-
-//destructeur
-RID :: ~RID()
+//
+// ~RID
+// 
+// Desc: Destructor
+//
+RID::~RID()
 {
-	
-};
+   // Don't need to do anything
+}
 
-
-////////GETTER
-//pageNum est initialisé avec la valeur PageNum de l'objet
-RC RID :: GetPageNum(PageNum &pageNum) const
+//
+// operator=
+//
+// Desc: overload = operator
+// In:   rid - rid object to set this object equal to
+// Ret:  reference to *this
+//
+RID& RID::operator= (const RID &rid)
 {
-	if(!viableRid)
-	{
-		return RM_RID_NOT_VIABLE;
-	}
+   // Test for self-assignment
+   if (this != &rid) {
+      // Just copy the members since there is no memory allocation involved
+      this->pageNum = rid.pageNum;
+      this->slotNum = rid.slotNum;
+   }
 
-pageNum = this->pageNum;
-return 0;	
-	
-};
+   // Return a reference to this
+   return (*this);
+}
 
-//slotNum est initialisé avec la valeur de SlotNum de l'objet
-RC RID :: GetSlotNum(SlotNum &slotNum) const
+//
+// operator==
+//
+// Desc: overload == operator
+// In:   rid - rid object to be compared with this object
+// Ret:  true or false
+//
+bool RID::operator==(const RID &rid) const
 {
-	if(!viableRid)
-	{
-		return RM_RID_NOT_VIABLE;
-	}
+   return (this->pageNum == rid.pageNum) && (this->slotNum == rid.slotNum);
+}
 
-slotNum = this->slotNum;	
-return 0;
-};
+//
+// GetPageNum
+// 
+// Desc: Return page number
+// Out:  _pageNum - set to this RID's page number
+// Ret:  RM_INVIABLERID
+//
+RC RID::GetPageNum(PageNum &_pageNum) const
+{
+   // Should be a viable record identifier
+   if (pageNum == 0)
+      return (RM_INVIABLERID);
+
+   // Set the parameter to this RID's page number
+   _pageNum = pageNum;    
+
+   // Return ok
+   return (0);
+}
+
+//
+// GetSlotNum
+// 
+// Desc: Return slot number
+// Out:  _slotNum - set to this RID's slot number
+// Ret:  RM_INVIABLERID
+//
+RC RID::GetSlotNum(SlotNum &_slotNum) const
+{
+   // Should be a viable record identifier
+   if (pageNum == 0)
+      return (RM_INVIABLERID);
+
+   // Set the parameter to this RID's slot number
+   _slotNum = slotNum;    
+
+   // Return ok
+   return (0);
+}
 

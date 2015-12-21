@@ -1,404 +1,333 @@
-#include "rm.h"
-#include <cstring>
-#include <stdlib.h>
+//
+// File:        rm_filescan.cc
+// Description: RM_FileScan class implementation
+// Author:      Hyunjung Park (hyunjung@stanford.edu)
+//
 
+#include "rm_internal.h"
+
+// 
+// RM_FileScan
+//
+// Desc: Default Constructor
+//
+RM_FileScan::RM_FileScan()
+{
+   // Initialize member variables
+   bScanOpen = FALSE;
+   curPageNum = RM_HEADER_PAGE_NUM;
+   curSlotNum = 0;
+
+   pFileHandle = NULL;
+   attrType = INT;
+   attrLength = sizeof(int);
+   attrOffset = 0;
+   compOp = NO_OP;
+   value = NULL;
+   pinHint = NO_HINT;
+}
+
+// 
+// RM_FileScan
+//
+// Desc: Destructor
+//
+RM_FileScan::~RM_FileScan()         
+{
+   // Don't need to do anything
+}
+
+//
+// OpenScan
+//
+// Desc: Open a file scan with the given fileHandle and scan condition
+// In:   fileHandle  - RM_FileHandle object (must be open)
+//       _attrType   - INT|FLOAT|STRING
+//       _attrLength - 4 for INT|FLOAT, 1~MAXSTRING for STRING
+//       _attrOffset - indicates the location of the attribute
+//       _compOp     - EQ_OP|LT_OP|GT_OP|LE_OP|GE_OP|NE_OP|NO_OP
+//       _value      - points to the value which will be compared with
+//                     the given attribute
+//       _pinHint    - not implemented yet
+// Ret:  RM_SCANOPEN, RM_VALUENULL, RM_INVALIDATTR, RM_CLOSEDFILE
+//
+RC RM_FileScan::OpenScan(const RM_FileHandle &fileHandle, 
+                         AttrType   _attrType,
+                         int        _attrLength,
+                         int        _attrOffset,
+                         CompOp     _compOp,
+                         void       *_value,
+                         ClientHint _pinHint)
+{
+   // Sanity Check: 'this' should not be open yet
+   if (bScanOpen)
+      // Test: opened RM_FileScan
+      return (RM_SCANOPEN);
+
+   // Sanity Check: fileHandle must be open
+   if (fileHandle.fileHdr.recordSize == 0) // a little tricky here
+      // Test: unopened fileHandle
+      return (RM_CLOSEDFILE);
+
+   // Sanity Check: compOp
+   switch (_compOp) {
+   case EQ_OP:
+   case LT_OP:
+   case GT_OP:
+   case LE_OP:
+   case GE_OP:
+   case NE_OP:
+   case NO_OP:
+      break;
+
+   default:
+      return (RM_INVALIDCOMPOP);
+   }
    
-RM_FileScan :: RM_FileScan  ()
-{
-	this->scanOpen = false;
-	this->rfh = NULL;
-	
-};
+   if (_compOp != NO_OP) {
+      // Sanity Check: value must not be NULL
+      if (_value == NULL)
+         // Test: null _value
+         return (RM_NULLPOINTER);
 
-RM_FileScan :: ~RM_FileScan ()
-{
-	
-};
+      // Sanity Check: attrType, attrLength
+      switch (_attrType) {
+      case INT:
+      case FLOAT:
+         if (_attrLength != 4)
+            // Test: wrong _attrLength
+            return (RM_INVALIDATTR);
+         break;
 
-RC RM_FileScan :: OpenScan  (const RM_FileHandle &fileHandle,
-                  AttrType   attrType,
-                  int        attrLength,
-                  int        attrOffset,
-                  CompOp     compOp,
-                  void       *value,
-                  ClientHint pinHint)
-{
-int res;
+      case STRING:
+         if (_attrLength < 1 || _attrLength > MAXSTRINGLEN)
+            // Test: wrong _attrLength
+            return (RM_INVALIDATTR);
+         break;
 
-this->scanOpen = true; //On ouvre le scan du fichier
-this->rfh = new RM_FileHandle(*fileHandle.pf, fileHandle.fh);
-this->attrType = attrType;
-this->attrLength = attrLength;
-this->attrOffset = attrOffset;
-this->compOp = compOp;
-this->value = value;
+      default:
+         // Test: wrong _attrType
+         return (RM_INVALIDATTR);
+      }
 
+      // Sanity Check: attrOffset
+      if (_attrOffset < 0 
+          || _attrOffset + _attrLength > fileHandle.fileHdr.recordSize)
+         // Test: wrong _attrOffset/_attrLength
+         return (RM_INVALIDATTR);
+   }
 
+   // Copy parameters to local variable
+   pFileHandle = (RM_FileHandle *)&fileHandle;
+   attrType    = _attrType;
+   attrLength  = _attrLength;
+   attrOffset  = _attrOffset;
+   compOp      = _compOp;
+   value       =  _value;
+   pinHint     = _pinHint;
 
-//On teste si l'attribut du fichier est de type string, int ou float et on assigne la value dans son bon type
-if(value != NULL){
-switch(attrType){
-case INT:{
-	
-	this->valInt = *((int*)(value));
-	break;
-		}
+   // Set local state variables
+   bScanOpen = TRUE;
+   curPageNum = RM_HEADER_PAGE_NUM;
+   curSlotNum = pFileHandle->fileHdr.numRecordsPerPage;
 
-case FLOAT:{
-	this->valFloat = *((float*)(value));
-	break;
-			}
-
-case STRING:{
-	if(attrLength<=MAXSTRINGLEN&&attrLength>=1)
-	this->valString = new char[attrLength];
-	memcpy(valString, value, attrLength);
-	break;
-	
-			}
-}
+   // Return ok
+   return (0);
 }
 
-PF_PageHandle *tmpPage = new PF_PageHandle();
-//On passe le file header
-res = this->rfh->pf->GetNextPage(0, *tmpPage);
-	if(res !=0)
-	{
-		delete tmpPage;
-		return res;
-	}
-
-//On récupère le numéro de la page courante
-res = tmpPage->GetPageNum(this->currentPage);
-		if(res !=0)
-	{
-		return res;
-	}
-
-this->currentSlot = -1;
-
-
-//On récupère le numéro de la dernière page
-res = this->rfh->pf->GetLastPage(*tmpPage);
-	if(res !=0)
-	{
-		delete tmpPage;
-		return res;
-	}
-res = tmpPage->GetPageNum(this->numLastPage);
-		if(res !=0)
-	{
-		return res;
-	}
-
-
-
-this->rfh->pf->UnpinPage(currentPage);
-return 0;	
-};
-
-
-RC RM_FileScan :: GetNextRec(RM_Record &rec)
+//
+// GetNextRec
+//
+// Desc: Retrieve a copy of the next record that satisfies the scan condition
+// Out:  rec - Set to the next matching record
+// Ret:  RM or PF return code
+//
+RC RM_FileScan::GetNextRec(RM_Record &rec)
 {
+   RC rc;
+   PF_PageHandle pageHandle;
+   char *pData;
+   RID *curRid;
 
-	int res;
-	int resGetSlot;
-	bool goodRecord = false;
-	
-	//ON commence par récupérer la page courante
-	PF_PageHandle *page= new PF_PageHandle();
-	res = this->rfh->pf->GetThisPage(this->currentPage,*page);
-		if(res !=0)
-		{
-			delete page;
-			return res;
-		}
-		
-	//On récupère les données de la page
-	char *pData;
-	page->GetData(pData);
-	
-	//On récupère le header de la page
-	rm_PageHeader currentPageHeader;
-	memcpy(&currentPageHeader, pData, sizeof(rm_PageHeader));
-	
-	//On va récupérer le prochaine slot à partir du bitmap du page header
-	SlotNum nextSlot;
-	resGetSlot = currentPageHeader.tab->GetNextSlot(this->currentSlot, nextSlot);
-	
-	//Tant que l'on a pas trouvé un slot qui ne remplit pas les conditions on charge la page suivante
-	while(!goodRecord)
-	{	
-		//Si on a trouvé un enregistrement alors nous pouvons vérifier s'il remplit les conditions
-		if(resGetSlot == 0)
-		{
-			//Si on a trouvé un slot on change la valeur courante du slot
-			this->currentSlot = nextSlot;
-			goodRecord = EstUnBonRecord(pData);
+   // Sanity Check: 'this' must be open
+   if (!bScanOpen)
+      return (RM_CLOSEDSCAN);
 
+   // Sanity Check: fileHandle must be open
+   if (pFileHandle->fileHdr.recordSize == 0) // a little tricky here
+      // Test: unopened fileHandle
+      return (RM_CLOSEDFILE);
 
-		}
-		
-		else{
-		
-			//Si nous sommes dans la dernière page, impossible d'aller à la suivante
-			if(this->currentPage == this->numLastPage)
-			{
-				return RM_EOF;
-			}
-			
-		
-		//On charge la page suivante
-		res = this->rfh->pf->GetNextPage(this->currentPage,*page);
-				if(res != 0)
-					return res;
-		//On met à jour le numéro de page courant
-		res = page->GetPageNum(this->currentPage);
-				if(res != 0)
-					return res;
-		//On met à -1 le currentSlot car on va repartir du début du bitmap
-		this->currentSlot = -1
-		;
-		
-		//On récupère les données de la page
-		res = page->GetData(pData);
-			if(res != 0)
-					return res;
-		
-		//On charge le page header
-		memcpy(&currentPageHeader, pData, sizeof(rm_PageHeader));
+   // Fetch another page if required
+   if (curSlotNum == pFileHandle->fileHdr.numRecordsPerPage) {
+repeat:
+      // Get next page
+      if (rc = pFileHandle->pfFileHandle.GetNextPage(curPageNum, pageHandle))
+         // Test: EOF
+         goto err_return;
 
-		//On va chercher un slot 
-		resGetSlot = currentPageHeader.tab->GetNextSlot(this->currentSlot, nextSlot);
-		
-		}
+      // Update curPageNum
+      if (rc = pageHandle.GetPageNum(curPageNum))
+         // Should not happen
+         // In fact, we need to unpin the page, but don't know the page number
+         goto err_return;
 
-	}
+      // Reset curSlotNum
+      curSlotNum = 0;
+   }
+   // We didn't process the whole page in the previous GetNextRec() call
+   else {
+      if (rc = pFileHandle->pfFileHandle.GetThisPage(curPageNum, pageHandle))
+         if (rc == PF_INVALIDPAGE)
+            // We can get PF_INVALIDPAGE if curPageNum was disposed
+            goto repeat;
+         else
+            // Test: closed fileHandle
+            goto err_return;
+   }
 
+   //
+   if (rc = pageHandle.GetData(pData))
+      // Should not happen
+      goto err_unpin;
 
-RID *rid = new RID(this->currentPage,this->currentSlot);
-this->rfh->GetRec(*rid,rec);
-return 0;	
-};           
+   // Find the next record based on scan condition
+   FindNextRecInCurPage(pData);
 
+   // No HIT in this page, go to next page
+   if (curSlotNum == pFileHandle->fileHdr.numRecordsPerPage) {
+      // Unpin this page
+      if (rc = pFileHandle->pfFileHandle.UnpinPage(curPageNum))
+         // Should not happen
+         goto err_return;
+      
+      goto repeat;
+   }
+               
+   // HIT: copy the record to the given location
+   curRid = new RID(curPageNum, curSlotNum);
+   rec.rid = *curRid;
+   delete curRid;
 
-bool RM_FileScan ::  EstUnBonRecord(char *pData)
-{
-	
-switch(this->attrType)
-{	
-	
-	if(this->value == NULL) return true;
-	
-	//On associe à chaque type les tests associés
-	case INT :{
-	pData += this->attrOffset;
-	int tmpVal = atoi(pData);
-		switch(this->compOp)
-		{
-			case EQ_OP :{
-				
-				if(tmpVal == valInt) return true;
-				
-				break;
-						}
-			
-			
-			case LT_OP :{
-				
-				if(tmpVal < valInt) return true;
-				
-				break;
-						}
-						
-			case GT_OP :{
-				
-				if(tmpVal > valInt) return true;
-				
-				break;
-						}			
-			
-			case LE_OP :{
-				
-				if(tmpVal <= valInt) return true;
-				
-				break;
-						}
-			
-			
-			case GE_OP :{
-				
-				if(tmpVal >= valInt) return true;
-				
-				break;
-						}
-			
-			case NE_OP :{
-				
-				if(tmpVal != valInt) return true;
-				
-				break;
-						}
-			
-			
-			case NO_OP :{
-				
-				return true;
-				break;
-						}
-			
-				
-		}
-		
-		
-		break;
-	}
-	
-	case FLOAT :{
-		
-		pData += this->attrOffset;
-		float tmpVal = atof(pData);
-		
-		switch(this->compOp)
-		{
-					case EQ_OP :{
-				
-				if(tmpVal == valFloat) return true;
-				
-				break;
-						}
-			
-			
-			case LT_OP :{
-				
-				if(tmpVal < valFloat) return true;
-				
-				break;
-						}
-						
-			case GT_OP :{
-				
-				if(tmpVal > valFloat) return true;
-				
-				break;
-						}			
-			
-			case LE_OP :{
-				
-				if(tmpVal <= valFloat) return true;
-				
-				break;
-						}
-			
-			
-			case GE_OP :{
-				
-				if(tmpVal >= valFloat) return true;
-				
-				break;
-						}
-			
-			case NE_OP :{
-				
-				if(tmpVal != valFloat) return true;
-				
-				break;
-						}
-			
-			
-			case NO_OP :{
-				
-				return true;
-				break;
-						}
-			
-			
-		}
-		
-		
-		
-		
-		
-		
-		break;
-	}
-	
-	case STRING :{
-		
-		char *tmpString = pData+this->attrOffset;
-		
-		switch(this->compOp)
-		{
-			case EQ_OP :{
-				
-				if(strncmp(tmpString, pData, this->attrLength) == 0) return true;
-				
-				break;
-						}
-			
-			
-			case LT_OP :{
-				
-				if(strncmp(tmpString, pData, this->attrLength)<0) return true;
-				
-				break;
-						}
-						
-			case GT_OP :{
-				
-				if(strncmp(tmpString, pData, this->attrLength) > 0) return true;
-				
-				break;
-						}			
-			
-			case LE_OP :{
-				
-				if(strncmp(tmpString, pData, this->attrLength) <= 0) return true;
-				
-				break;
-						}
-			
-			
-			case GE_OP :{
-				
-				if(strncmp(tmpString, pData, this->attrLength) >= 0) return true;
-				
-				break;
-						}
-			
-			case NE_OP :{
-				
-				if(strncmp(tmpString, pData, this->attrLength) != 0) return true;
-				
-				break;
-						}
-			
-			
-			case NO_OP :{
-				
-				return true;
-				break;
-						}
-			
-			
-		}
-		
-		
-		
-		break;
-	}
-	
-	
-	
-}	
-	
-return false;	
+   if (rec.pData)
+      delete [] rec.pData;
+   rec.recordSize = pFileHandle->fileHdr.recordSize;
+   rec.pData = new char[rec.recordSize];
+   memcpy(rec.pData,
+          pData + pFileHandle->fileHdr.pageHeaderSize 
+          + curSlotNum * pFileHandle->fileHdr.recordSize,
+          pFileHandle->fileHdr.recordSize);
+
+   // Increment curSlotNum
+   curSlotNum++;
+
+   // If there is no more matching record in this page,
+   // we don't have to access this page in the next GetNextRec() call.
+   FindNextRecInCurPage(pData);
+
+   // Unpin this page
+   if (rc = pFileHandle->pfFileHandle.UnpinPage(curPageNum))
+      // Should not happen
+      goto err_return;
+
+   // Return ok
+   return (0);
+
+   // Recover from inconsistent state due to unexpected error
+err_unpin:
+   pFileHandle->pfFileHandle.UnpinPage(curPageNum);
+err_return:
+   // Return error
+   return (rc);
 }
 
-
-RC RM_FileScan :: CloseScan ()
+//
+// FineNextRecInCurPage
+//
+// Desc: Iterates slots in the current page (until hit or end)
+// In:   pData - points a data page buffer
+//
+void RM_FileScan::FindNextRecInCurPage(char *pData)
 {
-//On ferme le scan
-this->scanOpen = false;
-return 0;	
-};                    
+   for ( ; curSlotNum < pFileHandle->fileHdr.numRecordsPerPage; curSlotNum++) {
+      float cmp;
+      int i;
+      float f;
+
+      // Skip empty slots
+      if (!pFileHandle->GetBitmap(pData + sizeof(RM_PageHdr), curSlotNum))
+         continue;
+      
+      // Hit if NO_OP
+      if (compOp == NO_OP)
+         break;
+
+      // Do comparison according to the attribute type
+      switch (attrType) {
+      case INT:
+         memcpy(&i,
+                pData + pFileHandle->fileHdr.pageHeaderSize
+                + curSlotNum * pFileHandle->fileHdr.recordSize 
+                + attrOffset,
+                sizeof(int));
+         cmp = i - *((int *)value);
+         break;
+
+      case FLOAT:
+         memcpy(&f,
+                pData + pFileHandle->fileHdr.pageHeaderSize
+                + curSlotNum * pFileHandle->fileHdr.recordSize 
+                + attrOffset,
+                sizeof(float));
+         cmp = f - *((float *)value);
+         break;
+
+      case STRING:
+         cmp = memcmp(pData + pFileHandle->fileHdr.pageHeaderSize
+                      + curSlotNum * pFileHandle->fileHdr.recordSize 
+                      + attrOffset,
+                      value,
+                      attrLength);
+         break;
+      }
+
+      // Make decision according to comparison operator
+      if ((compOp == EQ_OP && cmp == 0)
+          || (compOp == LT_OP && cmp < 0)
+          || (compOp == GT_OP && cmp > 0)
+          || (compOp == LE_OP && cmp <= 0)
+          || (compOp == GE_OP && cmp >= 0)
+          || (compOp == NE_OP && cmp != 0))
+         break;
+   }
+}
+
+//
+// CloseScan
+//
+// Desc: Close a file scan with the given fileHandle and scan condition
+// Ret:  RM_CLOSEDSCAN
+//
+RC RM_FileScan::CloseScan()
+{
+   // Sanity Check: 'this' must be open
+   if (!bScanOpen)
+      // Test: closed RM_FileScan
+      return (RM_CLOSEDSCAN);
+
+   // Reset member variables
+   bScanOpen = FALSE;
+   curPageNum = RM_HEADER_PAGE_NUM;
+   curSlotNum = 0;
+   pFileHandle = NULL;
+   attrType = INT;
+   attrLength = sizeof(int);
+   attrOffset = 0;
+   compOp = NO_OP;
+   value = NULL;
+   pinHint = NO_HINT;
+
+   // Return ok
+   return (0);
+}
+

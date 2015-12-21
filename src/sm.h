@@ -14,11 +14,12 @@
 #include "parser.h"
 #include "rm.h"
 #include "ix.h"
+#include "printer.h"
 
 typedef struct relcat relcat;
 struct relcat{
 
-char relName[20]; //Nom de la relation
+char relName[MAXNAME+1]; //Nom de la relation
 int tupleLength;	//Taille du tuple (en Bytes)
 int attrCount;	//Nb d'attributs dans le tuple
 	
@@ -27,8 +28,8 @@ int attrCount;	//Nb d'attributs dans le tuple
 typedef struct attrcat attrcat;
 struct attrcat{
 	
-char relName[20];	//Nom de la relation où se situe l'attribut
-char attrName[20];	//Nom de l'attribut
+char relName[MAXNAME+1];	//Nom de la relation où se situe l'attribut
+char attrName[MAXNAME+1];	//Nom de l'attribut
 int offset;	//Décalage de l'attribut par rapport au début du tuple (en Bytes)
 AttrType attrType;	//Type de l'attribut (String, int ou float)
 int attrLength;	//Taille de l'attribut
@@ -71,8 +72,8 @@ public:
                    const char *value);            //   value
 
 private:
-IX_Manager ixm;
-RM_Manager rmm;
+IX_Manager &ixm;
+RM_Manager &rmm;
 RM_FileHandle relcatFH;
 RM_FileHandle attrcatFH;
 };

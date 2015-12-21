@@ -22,81 +22,53 @@
 #include "rm_rid.h"
 #include "pf.h"
 
-//Structure représentant le header du fichier
-typedef struct rm_fileheader rm_FileHeader;
-struct rm_fileheader{
-	int recordSize;	//Taille d'un enregistrement
-	int nbRecordsPerPage;	//Nb d'enregistrements par page
-	PageNum nextFreePage; //Première page libre du fichier
-		
-};
-
-
-//class Bitmap, utile pour donner une vision des slots libres et occupés
-class Bitmap{
-	
-	public:
-	Bitmap(int taille);
-	~Bitmap();
-	bool IsFull(); //Teste si tout les bits sont à 1
-	RC GetFirstFree(SlotNum &slotnum) ; //Retourne le premier slot où le bit est à 0
-	RC GetNextSlot(const SlotNum &currentSlotNum,SlotNum &NextslotNum); //Retourne le prochaine slot occupé à partir du slot courrant+1
-	RC SetSlot(const SlotNum &slotnum,const int &value);//Initialise le bit de slotnum à value
-	
-	
-	public:
-	int *tabBitmap;
-	int taille;
-	friend class RM_FileHandle;
-	
-};
-
-//Structure représentant le header d'une page
-typedef struct rm_pageheader rm_PageHeader;
-struct rm_pageheader{
-	
-	PageNum nextFreePage; //Prochaine page libre
-	Bitmap *tab;	//Bitmap de la page	
-	
-};
-
-
 //
 // RM_Record: RM Record interface
 //
 class RM_Record {
+    friend class RM_FileHandle;
+    friend class RM_FileScan;
 public:
     RM_Record ();
-    RM_Record(const PageNum &pageNum, const SlotNum &slotNum, const char* pData, const int &recordSize);
     ~RM_Record();
-	
-	//getter
+
     // Return the data corresponding to the record.  Sets *pData to the
     // record contents.
     RC GetData(char *&pData) const;
 
     // Return the RID associated with the record
     RC GetRid (RID &rid) const;
- 
- 
+
 private:
-	char *pData; //Données de l'enregistrement
-	RID *rid; //Coordonnées RID de l'enregistrement
-	bool viableRecord; //Test si l'enregistrement a été chargé avec rm_filescan ou rm_filehandle 
-	int recordSize;	//Taille de l'enregistrement;
-   
-friend class RM_FileHandle;
-friend class RM_FileScan;
-   
+    // Copy constructor
+    RM_Record  (const RM_Record &record);
+    // Overloaded =
+    RM_Record& operator=(const RM_Record &record);
+
+    char *pData;
+    int  recordSize;
+    RID  rid;
+};
+
+//
+// RM_FileHdr: Header structure for files
+//
+struct RM_FileHdr {
+    PageNum firstFree;     // first free page in the linked list
+    int recordSize;        // fixed record size
+    int numRecordsPerPage; // # of records in each page
+    int pageHeaderSize;    // page header size
+    int numRecords;        // # of pages in the file
 };
 
 //
 // RM_FileHandle: RM File interface
 //
 class RM_FileHandle {
+    friend class RM_Manager;
+    friend class RM_FileScan;
 public:
     RM_FileHandle ();
-	RM_FileHandle(const PF_FileHandle &pf, const rm_FileHeader &fh);
     ~RM_FileHandle();
 
     // Given a RID, return the record
@@ -111,20 +83,20 @@ public:
     // from the buffer pool to disk.  Default value forces all pages.
     RC ForcePages (PageNum pageNum = ALL_PAGES);
 
-	RC InsertPageHeader(const PageNum &pagenum, const rm_PageHeader &pageHeader); //insère un header dans une page donné
-	RC GetNextFreePage(PageNum &pageNum); //pageNum prend la première page où il y a des slots de libres
-	
+private:
+    // Copy constructor
+    RM_FileHandle  (const RM_FileHandle &fileHandle);
+    // Overloaded =
+    RM_FileHandle& operator=(const RM_FileHandle &fileHandle);
 
-private :
+    // Bitmap Manipulation
+    int GetBitmap  (char *map, int idx) const;
+    void SetBitmap (char *map, int idx) const;
+    void ClrBitmap (char *map, int idx) const;
 
-PF_FileHandle *pf;
-bool viableFile; //bool qui teste si le fichier a été ouvert
-rm_FileHeader fh;	//FileHeader propre au fichier chargé
-
-friend class RM_Manager;
-friend class RM_FileScan;
-
-
+    PF_FileHandle pfFileHandle;
+    RM_FileHdr fileHdr;                                   // file header
+    int bHdrChanged;                                      // dirty flag for file hdr
 };
 
 //
@@ -144,22 +116,26 @@ public:
                   ClientHint pinHint = NO_HINT); // Initialize a file scan
     RC GetNextRec(RM_Record &rec);               // Get next matching record
     RC CloseScan ();                             // Close the scan
-    bool EstUnBonRecord(char *pData);			//Teste si les données en argument sont acceptables
 
 private:
-RM_FileHandle *rfh;
-bool scanOpen;
-AttrType   attrType;
-int        attrLength;
-int        attrOffset;
-CompOp     compOp;
-int valInt;
-float valFloat;
-char *valString;
-PageNum currentPage;
-SlotNum currentSlot;
-void *value;
-PageNum numLastPage;
+    // Copy constructor
+    RM_FileScan   (const RM_FileScan &fileScan);
+    // Overloaded =
+    RM_FileScan&  operator=(const RM_FileScan &fileScan);
+
+    void FindNextRecInCurPage(char *pData);
+
+    int bScanOpen;
+    PageNum curPageNum;
+    SlotNum curSlotNum;
+
+    RM_FileHandle *pFileHandle;
+    AttrType attrType;
+    int attrLength;
+    int attrOffset;
+    CompOp compOp;
+    void *value;
+    ClientHint pinHint;
 };
 
 //
@@ -175,10 +151,14 @@ public:
     RC OpenFile   (const char *fileName, RM_FileHandle &fileHandle);
 
     RC CloseFile  (RM_FileHandle &fileHandle);
-    
+
 private:
-PF_Manager& pfm;
-  
+    // Copy constructor
+    RM_Manager     (const RM_Manager &manager);
+    // Overloaded =
+    RM_Manager&    operator=(const RM_Manager &manager);
+
+    PF_Manager *pPfm;
 };
 
 //
@@ -186,11 +166,19 @@ PF_Manager& pfm;
 //
 void RM_PrintError(RC rc);
 
-#define RM_RECORD_NOT_VIABLE 2;
-#define BITMAP_NO_FREE_SLOT 3;
-#define BITMAP_EOF 5;
-#define BITMAP_NO_NEXT_SLOT 6;
-#define RM_FILEHANDLE_NOT_VIABLE 4;
-#define RM_EOF 1;
+#define RM_INVIABLERID     (START_RM_WARN + 0) // inviable rid
+#define RM_UNREADRECORD    (START_RM_WARN + 1) // unread record
+#define RM_INVALIDRECSIZE  (START_RM_WARN + 2) // invalid record size
+#define RM_INVALIDSLOTNUM  (START_RM_WARN + 3) // invalid slot number
+#define RM_RECORDNOTFOUND  (START_RM_WARN + 4) // record not found
+#define RM_INVALIDCOMPOP   (START_RM_WARN + 5) // invalid comparison operator
+#define RM_INVALIDATTR     (START_RM_WARN + 6) // invalid attribute parameters
+#define RM_NULLPOINTER     (START_RM_WARN + 7) // pointer is null
+#define RM_SCANOPEN        (START_RM_WARN + 8) // scan is open
+#define RM_CLOSEDSCAN      (START_RM_WARN + 9) // scan is closed
+#define RM_CLOSEDFILE      (START_RM_WARN + 10)// file handle is closed
+#define RM_LASTWARN        RM_CLOSEDFILE
+
+#define RM_EOF             PF_EOF              // work-around for rm_test
 
 #endif

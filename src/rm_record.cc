@@ -1,63 +1,72 @@
-#include "rm.h"
-#include <cstring>
+//
+// File:        rm_record.cc
+// Description: RM_Record class implementation
+// Author:      Hyunjung Park (hyunjung@stanford.edu)
+//
 
+#include "rm_internal.h"
 
-RM_Record :: RM_Record()
+// 
+// RM_Record
+//
+// Desc: Default Constructor
+//
+RM_Record::RM_Record()
 {
-	this->rid = NULL;
-	this->pData = NULL;
-	this->viableRecord = false;
-	this->recordSize = -1;
+   pData = NULL;
+   recordSize = 0;
+}
 
-};
-
-RM_Record :: RM_Record(const PageNum &pageNum, const SlotNum &slotNum, const char* pData, const int &recordSize)
+//
+// ~RM_Record
+// 
+// Desc: Destructor
+//
+RM_Record::~RM_Record()
 {
-	this->rid = new RID(pageNum, slotNum);
-	this->recordSize = recordSize;	
-	this->viableRecord = true;
-	this->pData = new char[this->recordSize];
-	strcpy(this->pData, pData);
-};
+   if (pData)
+      delete [] pData;
+}
 
-
-RM_Record :: ~RM_Record()
+//
+// GetData
+// 
+// Desc: Return data
+//       The record object must refer to read record
+//       (by RM_FileHandle::GetRec() or RM_FileScan::GetNextRec())
+// Out:  _pData - set to this record's data
+// Ret:  RM_UNREADRECORD
+//
+RC RM_Record::GetData(char *&_pData) const
 {
-	delete this->rid;
-	this->rid = NULL;
-	
-	if(pData)
-	{
-		delete [] pData;
-		pData = NULL;
-	}
-	
-};
+   // A record should have been read
+   if (pData == NULL)
+      return (RM_UNREADRECORD);
 
-//////getter
-//pData prend la valeur de this->pData
-RC RM_Record :: GetData(char *&pData) const
+   // Set the parameter to this RM_Record's data
+   _pData = pData;
+
+   // Return ok
+   return (0);
+}
+
+//
+// GetData
+// 
+// Desc: Return RID
+// Out:  _rid - set to this record's record identifier
+// Ret:  RM_UNREADRECORD
+//
+RC RM_Record::GetRid(RID &_rid) const
 {
-	if(!this->viableRecord)
-	{
-		return RM_RECORD_NOT_VIABLE;
-	}
-	
-	pData = this->pData;
-	return 0;
-};
+   // A record should have been read
+   if (pData == NULL)
+      return (RM_UNREADRECORD);
 
-//rid prend la valeur de this->rid
-RC RM_Record :: GetRid (RID &rid) const
-{
-	
-	if(!this->viableRecord)
-	{
-		return RM_RECORD_NOT_VIABLE;
-	}
+   // Set the parameter to this RM_Record's record identifier
+   _rid = rid;
 
-	this->rid->GetPageNum(rid.pageNum);
-	this->rid->GetSlotNum(rid.slotNum);	
-	return 0;
+   // Return ok
+   return (0);
 }
 

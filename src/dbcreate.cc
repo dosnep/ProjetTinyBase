@@ -20,6 +20,20 @@ using namespace std;
 //
 // main
 //
+
+void PrintError(RC rc);
+
+
+void PrintError(RC rc)
+{
+    if (abs(rc) <= END_PF_WARN)
+        PF_PrintError(rc);
+    //else if (abs(rc) <= END_RM_WARN)
+        //RM_PrintError(rc);
+    else
+        cerr << "Error code out of range: " << rc << "\n";
+}
+
 int main(int argc, char *argv[])
 {
     char *dbname;
@@ -55,17 +69,17 @@ int main(int argc, char *argv[])
 	RM_FileHandle attrcatFH;
 	rc = rmm.CreateFile("relcat",sizeof(relcat));
 		if(rc != 0)
-			return rc;
+                PrintError(rc);
 	rc = rmm.CreateFile("attrcat",sizeof(attrcat));
 		if(rc != 0)
-			return rc;	
+                PrintError(rc);
 	//On ouvre les deux fichiers
 	rc = rmm.OpenFile("relcat",relcatFH);
 		if(rc != 0)
-			return rc;		
+                PrintError(rc);
 	rc = rmm.OpenFile("attrcat",attrcatFH);
 		if(rc != 0)
-			return rc;	
+                PrintError(rc);
 	
 	//Il faut maintenant remplir le relcat avec sa propre description
 		//On initialise le tuple pour les relations
@@ -81,14 +95,16 @@ int main(int argc, char *argv[])
 	//On ajoute ces 2 tuples dans le catalogue relcat
 	rc = relcatFH.InsertRec((char *)&relInit, rid);
 		if(rc != 0)
-			return rc;		
+                PrintError(rc);
 	rc = relcatFH.InsertRec((char *)&attrInit, rid);
 		if(rc != 0)
-			return rc;		
+                PrintError(rc);
+                
 	//On peut fermer le fichier
 	rc = rmm.CloseFile(relcatFH);
 		if(rc != 0)
-			return rc;		
+                PrintError(rc);
+				
 	//Il faut maintenant remplir le catalogue attrcat avec tout les attributs des 2 relations attrcat et relcat
 		//On ajoute tout les attributs de la relation relcat
 //1 er attribut
@@ -170,29 +186,46 @@ int main(int argc, char *argv[])
 	attrcat_attrcat_indexNo.indexNo = -1;		
 	
 //On insère l'ensemble des tuples dans le catalogue attrcat
+
+	rc = attrcatFH.InsertRec((char *)&attrcat_relcat_relName, rid);
+		if(rc != 0)
+                PrintError(rc);
+                
+ 	rc = attrcatFH.InsertRec((char *)&attrcat_relcat_tupleLength, rid);
+		if(rc != 0)
+                PrintError(rc);
+                
+ 	rc = attrcatFH.InsertRec((char *)&attrcat_relcat_attrCount, rid);
+		if(rc != 0)
+                PrintError(rc);         
+
+
 	rc = attrcatFH.InsertRec((char *)&attrcat_attrcat_relName, rid);
 		if(rc != 0)
-			return rc;					
+                PrintError(rc);
 	rc = attrcatFH.InsertRec((char *)&attrcat_attrcat_attrName, rid);
 		if(rc != 0)
-			return rc;	
+                PrintError(rc);
 	rc = attrcatFH.InsertRec((char *)&attrcat_attrcat_offset, rid);
 		if(rc != 0)
-			return rc;	
+                PrintError(rc);
 	rc = attrcatFH.InsertRec((char *)&attrcat_attrcat_attrType, rid);
 		if(rc != 0)
-			return rc;	
+                PrintError(rc);
 	rc = attrcatFH.InsertRec((char *)&attrcat_attrcat_attrLength, rid);
 		if(rc != 0)
-			return rc;	
+                PrintError(rc);
 	rc = attrcatFH.InsertRec((char *)&attrcat_attrcat_indexNo, rid);
 		if(rc != 0)
-			return rc;		
-			
+                PrintError(rc);
+
+      
+                               
+        	
 //Pour finir il faut fermer le second fichier
 	rc = rmm.CloseFile(attrcatFH);
 		if(rc != 0)
-			return rc;			
+                PrintError(rc);
 
     return(0);
 }

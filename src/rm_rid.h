@@ -11,7 +11,6 @@
 // components will require the use of RID but not the rest of RM.
 
 #include "tinybase.h"
-#include "iostream"
 
 //
 // PageNum: uniquely identifies a page in a file
@@ -29,27 +28,22 @@ typedef int SlotNum;
 class RID {
 public:
     RID();                                         // Default constructor
-    RID(const PageNum &pageNum, const SlotNum &slotNum);
+    RID(PageNum pageNum, SlotNum slotNum);
     ~RID();                                        // Destructor
+    RID& operator=(const RID &rid);                // Overloaded =
+    bool operator==(const RID &rid) const ;        // Overloaded ==
 
-
-	//getter
     RC GetPageNum(PageNum &pageNum) const;         // Return page number
     RC GetSlotNum(SlotNum &slotNum) const;         // Return slot number
 
+ PageNum pageNum;
+    SlotNum slotNum;
+        RID(const RID &rid);
 
 private:
-	PageNum pageNum; // Numéro associé à la page
-	SlotNum slotNum; //Slot associé à l'enregistrement
-	bool viableRid;	//true si le RID a était initialisé, false sinon
-	
-friend class RM_Record;
-friend class RM_FileHandle;
-friend class RM_FileScan;
+    // Copy constructor
+
+   
 };
 
 #endif
-
-#define RM_RID_NOT_VIABLE 1; //Erreur si viableRid est false
-
-

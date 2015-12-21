@@ -36,9 +36,9 @@ STATS_OPTION   = -DPF_STATS
 PF_SOURCES     = pf_buffermgr.cc pf_error.cc pf_filehandle.cc \
                  pf_pagehandle.cc pf_hashtable.cc pf_manager.cc \
                  pf_statistics.cc statistics.cc
-RM_SOURCES     = rm_rid.cc rm_record.cc Bitmap.cc rm_filehandle.cc rm_manager.cc rm_filescan.cc
+RM_SOURCES     = rm_rid.cc rm_record.cc  rm_filehandle.cc rm_manager.cc rm_filescan.cc
 IX_SOURCES     = ix_manager.cc ix_indexhandle.cc  ix_indexscan.cc ix_error.cc
-SM_SOURCES     = sm_manager.cc #printer.cc
+SM_SOURCES     = sm_manager.cc printer.cc
 QL_SOURCES     = ql_manager_stub.cc
 UTILS_SOURCES  = dbcreate.cc dbdestroy.cc  tinybase.cc
 PARSER_SOURCES = #scan.c parse.c nodes.c interp.c

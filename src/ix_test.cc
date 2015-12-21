@@ -547,8 +547,9 @@ memcpy(key, &ikey,sizeof(int));
 	ih.pf->UnpinPage(1);
 
 	if((rc = ixm.CloseIndex(ih)))
+	{
 		return rc;
-
+	}
    LsFiles((char*)FILENAME);
 
    if ((rc = ixm.DestroyIndex(FILENAME, index)))

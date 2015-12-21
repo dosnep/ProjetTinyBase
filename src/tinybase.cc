@@ -18,6 +18,21 @@ using namespace std;
 //
 // main
 //
+
+
+void PrintError(RC rc)
+{
+    if (abs(rc) <= END_PF_WARN)
+        PF_PrintError(rc);
+    //else if (abs(rc) <= END_RM_WARN)
+        //RM_PrintError(rc);
+    else
+        cerr << "Error code out of range: " << rc << "\n";
+}
+
+
+
+
 int main(int argc, char *argv[])
 {
     RC rc;
@@ -38,13 +53,15 @@ int main(int argc, char *argv[])
       //QL_Manager qlm(smm, ixm, rmm);
       // open the database
       if ((rc = smm.OpenDb(argv[1])))
-			return rc;
+                PrintError(rc);
+		smm.Help();
+		smm.Help("attrcat");
 	
       // call the parser
       //RBparse(pfm, smm, qlm);
       // close the database
       if ((rc = smm.CloseDb()))
-		return rc;
+                PrintError(rc);
 
 
     cout << "Bye.\n";
