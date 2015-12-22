@@ -175,91 +175,6 @@ RC SM_Manager::Load(const char *relName,
 
 RC SM_Manager::Print(const char *relName)
 {
-    cout << "Print\n"
-         << "   relName=" << relName << "\n";
-    return (0);
-}
-
-RC SM_Manager::Set(const char *paramName, const char *value)
-{
-    cout << "Set\n"
-         << "   paramName=" << paramName << "\n"
-         << "   value    =" << value << "\n";
-    return (0);
-}
-
-RC SM_Manager::Help()
-{
-
-RM_FileScan fs;
-RM_Record rec;
-int res;
-DataAttrInfo *attributes = new DataAttrInfo[3];
-int attrCount;
-RM_FileHandle rfh;
-char *pData;
-char *name = new char[MAXNAME+1];
-strcpy(name,"relcat");
-attrcat tmp;
-res = fs.OpenScan(this->attrcatFH,STRING,sizeof(name),offsetof(attrcat,relName), EQ_OP,name, NO_HINT);
-if(res != 0)
-	return res;
-
-res = 0;
-//On récupère l'ensemble des attributs pour la table relcat
-int i = 0;
-while(res != RM_EOF)
-{	res = fs.GetNextRec(rec);
-		if(res==RM_EOF)
-			break;
-
-	rec.GetData(pData);
-	memcpy(&tmp, pData, sizeof(attrcat));
-	
-	attributes[i].offset = tmp.offset;
-	attributes[i].attrType = tmp.attrType;
-	attributes[i].attrLength = tmp.attrLength;
-	attributes[i].indexNo = tmp.indexNo;
-	strcpy(attributes[i].relName,tmp.relName);
-	strcpy(attributes[i].attrName,tmp.attrName);
-	i++;
-	
-}
-attrCount = 3;
-Printer p(attributes, attrCount);
-//On imprime le header des attributs
-p.PrintHeader(cout);
-//On ferme le scan
-fs.CloseScan();
-
-//On ouvre une nouveau scan sur le catalogue des relations
-res = fs.OpenScan(this->relcatFH,STRING,sizeof(name),offsetof(relcat,relName), NO_OP,name, NO_HINT);
-if(res != 0)
-	return res;
-	
-while(res != RM_EOF)
-{	res = fs.GetNextRec(rec);
-		if(res==RM_EOF)
-			break;
-		
-		//On récupère les données de l'enregistrement
-		rec.GetData(pData);
-		
-		//On affiche les données
-		p.Print(cout, pData);
-	
-}
-//On ferme le scan
-fs.CloseScan();
-
-//On imprime le footer
-p.PrintFooter(cout);
-
-return 0;
-}
-
-RC SM_Manager::Help(const char *relName)
-{
 RM_FileScan fs;
 RM_Record rec;
 int res;
@@ -347,6 +262,156 @@ fs.CloseScan();
 //On imprime le footer
 p.PrintFooter(cout);
 
+    return (0);
+}
+
+RC SM_Manager::Set(const char *paramName, const char *value)
+{
+    cout << "Set\n"
+         << "   paramName=" << paramName << "\n"
+         << "   value    =" << value << "\n";
+    return (0);
+}
+
+RC SM_Manager::Help()
+{
+
+RM_FileScan fs;
+RM_Record rec;
+int res;
+DataAttrInfo *attributes = new DataAttrInfo[3];
+int attrCount;
+RM_FileHandle rfh;
+char *pData;
+char *name = new char[MAXNAME+1];
+strcpy(name,"relcat");
+attrcat tmp;
+res = fs.OpenScan(this->attrcatFH,STRING,sizeof(name),offsetof(attrcat,relName), EQ_OP,name, NO_HINT);
+if(res != 0)
+	return res;
+
+res = 0;
+//On récupère l'ensemble des attributs pour la table relcat
+int i = 0;
+while(res != RM_EOF)
+{	res = fs.GetNextRec(rec);
+		if(res==RM_EOF)
+			break;
+
+	rec.GetData(pData);
+	memcpy(&tmp, pData, sizeof(attrcat));
+	
+	attributes[i].offset = tmp.offset;
+	attributes[i].attrType = tmp.attrType;
+	attributes[i].attrLength = tmp.attrLength;
+	attributes[i].indexNo = tmp.indexNo;
+	strcpy(attributes[i].relName,tmp.relName);
+	strcpy(attributes[i].attrName,tmp.attrName);
+	i++;
+	
+}
+attrCount = 3;
+Printer p(attributes, attrCount);
+//On imprime le header des attributs
+p.PrintHeader(cout);
+//On ferme le scan
+fs.CloseScan();
+
+//On ouvre une nouveau scan sur le catalogue des relations
+res = fs.OpenScan(this->relcatFH,STRING,sizeof(name),offsetof(relcat,relName), NO_OP,name, NO_HINT);
+if(res != 0)
+	return res;
+	
+while(res != RM_EOF)
+{	res = fs.GetNextRec(rec);
+		if(res==RM_EOF)
+			break;
+		
+		//On récupère les données de l'enregistrement
+		rec.GetData(pData);
+		
+		//On affiche les données
+		p.Print(cout, pData);
+	
+}
+//On ferme le scan
+fs.CloseScan();
+
+//On imprime le footer
+p.PrintFooter(cout);
+
+return 0;
+}
+
+RC SM_Manager::Help(const char *relName)
+{
+RM_FileScan fs;
+RM_Record rec;
+int res;
+DataAttrInfo *attributes = new DataAttrInfo[6];
+int attrCount;
+RM_FileHandle rfh;
+char *pData;
+char *name = new char[MAXNAME+1];
+strcpy(name,relName);
+char *nameAttrCat = new char[MAXNAME+1];
+strcpy(nameAttrCat,"attrcat");
+
+
+attrcat tmp;
+res = fs.OpenScan(this->attrcatFH,STRING,sizeof(nameAttrCat),offsetof(attrcat,relName), EQ_OP,nameAttrCat, NO_HINT);
+if(res != 0)
+	return res;
+
+res = 0;
+//On récupère l'ensemble des attributs pour la table attrcat
+int i = 0;
+while(res != RM_EOF)
+{	res = fs.GetNextRec(rec);
+		if(res==RM_EOF)
+			break;
+
+	rec.GetData(pData);
+	memcpy(&tmp, pData, sizeof(attrcat));
+	
+	attributes[i].offset = tmp.offset;
+	attributes[i].attrType = tmp.attrType;
+	attributes[i].attrLength = tmp.attrLength;
+	attributes[i].indexNo = tmp.indexNo;
+	strcpy(attributes[i].relName,tmp.relName);
+	strcpy(attributes[i].attrName,tmp.attrName);
+	i++;
+	
+}
+attrCount = 6;
+Printer p(attributes, attrCount);
+//On imprime le header des attributs
+p.PrintHeader(cout);
+//On ferme le scan
+fs.CloseScan();
+
+//On ouvre une nouveau scan sur le catalogue attrcat
+res = fs.OpenScan(this->attrcatFH,STRING,sizeof(name),offsetof(attrcat,relName), EQ_OP,name, NO_HINT);
+if(res != 0)
+	return res;
+	
+while(res != RM_EOF)
+{	res = fs.GetNextRec(rec);
+		if(res==RM_EOF)
+			break;
+		
+		//On récupère les données de l'enregistrement
+		rec.GetData(pData);
+		
+		//On affiche les données
+		p.Print(cout, pData);
+	
+}
+//On ferme le scan
+fs.CloseScan();
+
+//On imprime le footer
+p.PrintFooter(cout);
 return 0;
 }
 

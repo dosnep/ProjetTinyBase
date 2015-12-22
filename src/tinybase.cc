@@ -55,8 +55,8 @@ int main(int argc, char *argv[])
       if ((rc = smm.OpenDb(argv[1])))
                 PrintError(rc);
 		smm.Help();
+		smm.Print("relcat");
 		smm.Help("attrcat");
-	
       // call the parser
       //RBparse(pfm, smm, qlm);
       // close the database
