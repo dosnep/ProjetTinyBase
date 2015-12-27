@@ -12,6 +12,7 @@
 #include "tinybase.h"
 #include "rm.h"
 #include "sm.h"
+#include "ql.h"
 
 using namespace std;
 
@@ -19,7 +20,7 @@ using namespace std;
 // main
 //
 
-
+/**
 void PrintError(RC rc)
 {
     if (abs(rc) <= END_PF_WARN)
@@ -29,7 +30,7 @@ void PrintError(RC rc)
     else
         cerr << "Error code out of range: " << rc << "\n";
 }
-
+**/
 
 
 
@@ -50,20 +51,16 @@ int main(int argc, char *argv[])
       RM_Manager rmm(pfm);
       IX_Manager ixm(pfm);
       SM_Manager smm(ixm, rmm);
-      //QL_Manager qlm(smm, ixm, rmm);
+      QL_Manager qlm(smm, ixm, rmm);
       // open the database
       if ((rc = smm.OpenDb(argv[1])))
                 PrintError(rc);
-		smm.Help();
-		smm.Print("relcat");
-		smm.Help("attrcat");
+
       // call the parser
-      //RBparse(pfm, smm, qlm);
+		RBparse(pfm, smm, qlm);
       // close the database
       if ((rc = smm.CloseDb()))
                 PrintError(rc);
-
-
     cout << "Bye.\n";
 exit(0);
 }

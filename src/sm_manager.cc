@@ -142,7 +142,50 @@ RC SM_Manager::CreateTable(const char *relName,
 
 RC SM_Manager::DropTable(const char *relName)
 {
-    cout << "DropTable\n   relName=" << relName << "\n";
+
+RM_FileScan fs;
+RM_Record rec;
+RID rid;
+int res;
+RM_FileHandle rfh;
+char *name = new char[MAXNAME+1];
+strcpy(name,relName);
+res = fs.OpenScan(this->attrcatFH,STRING,sizeof(name),offsetof(attrcat,relName), EQ_OP,name, NO_HINT);
+if(res != 0)
+	return res;
+res = 0;
+//On va supprimer chacun des attributs de relName du catalogue attrcat
+while(res != RM_EOF)
+{	res = fs.GetNextRec(rec);
+		if(res==RM_EOF)
+			break;
+
+	rec.GetRid(rid);
+	this->attrcatFH.DeleteRec(rid);
+	
+}
+fs.CloseScan();
+
+//On va supprimer le tuple relName dans le catalogue relcat
+res = fs.OpenScan(this->relcatFH,STRING,sizeof(name),offsetof(relcat,relName), EQ_OP,name, NO_HINT);
+if(res != 0)
+	return res;
+
+res = 0;
+//On va supprimer chacun des attributs de relName du catalogue attrcat
+while(res != RM_EOF)
+{	res = fs.GetNextRec(rec);
+		if(res==RM_EOF)
+			break;
+
+	rec.GetRid(rid);
+	this->attrcatFH.DeleteRec(rid);
+}
+fs.CloseScan();
+
+//On supprime maintenant le ficher "relName"
+rmm.DestroyFile(relName);
+
     return (0);
 }
 
@@ -167,9 +210,117 @@ RC SM_Manager::DropIndex(const char *relName,
 RC SM_Manager::Load(const char *relName,
                     const char *fileName)
 {
-    cout << "Load\n"
-         << "   relName =" << relName << "\n"
-         << "   fileName=" << fileName << "\n";
+
+char chemin[60] = "/home/user/Bureau/ProjetTinyBase/src/data/";
+//On ouvre le fichier à charger
+FILE *f;
+f = fopen(strcat(chemin,fileName),"r");
+if(f != NULL)
+{
+	
+	//Si le fichier est ouvert
+	//Nous allons ouvrir le catalogue rel pour y chercher les informations
+RM_FileScan fs;
+RM_Record rec;
+int res;
+RM_FileHandle rfh;
+char *name = new char[MAXNAME+1];
+strcpy(name,"relcat");
+int attrCount = 0;
+int tupleLength = 0;
+relcat tmpRel;
+char *pData;
+res = fs.OpenScan(this->relcatFH,STRING,sizeof(name),offsetof(relcat,relName), EQ_OP,name, NO_HINT);
+if(res != 0)
+	return res;
+
+res = 0;
+while(res != RM_EOF)
+{	res = fs.GetNextRec(rec);
+		if(res==RM_EOF)
+			break;
+		
+		rec.GetData(pData);
+		memcpy(&tmpRel, pData, sizeof(relcat));
+		attrCount = tmpRel.attrCount;
+		tupleLength = tmpRel.tupleLength;
+	
+}	
+fs.CloseScan();
+
+//Nous allons ouvrir le catalogue des attributs pour y chercher toutes les infos sur les attributs.
+res = fs.OpenScan(this->attrcatFH,STRING,sizeof(name),offsetof(attrcat,relName), EQ_OP,name, NO_HINT);
+if(res != 0)
+	return res;
+
+res = 0;
+//On récupère l'ensemble des attributs pour la table relcat
+DataAttrInfo *attributes = new DataAttrInfo[attrCount];
+int i = 0;
+attrcat tmpAttr;
+while(res != RM_EOF)
+{	res = fs.GetNextRec(rec);
+		if(res==RM_EOF)
+			break;
+
+	rec.GetData(pData);
+	memcpy(&tmpAttr, pData, sizeof(attrcat));
+	
+	attributes[i].offset = tmpAttr.offset;
+	attributes[i].attrType = tmpAttr.attrType;
+	attributes[i].attrLength = tmpAttr.attrLength;
+	attributes[i].indexNo = tmpAttr.indexNo;
+	strcpy(attributes[i].relName,tmpAttr.relName);
+	strcpy(attributes[i].attrName,tmpAttr.attrName);
+	i++;
+	
+}
+
+	char tuple[tupleLength];
+	char tmp[100];
+	char chaine[100];
+	char *token;
+	RID rid;
+	rmm.OpenFile(relName,rfh);
+	i = 0;
+	
+		while(fgets(chaine,100,f))
+		{	token = strtok(chaine, ",");	
+			for(i = 0; i<attrCount; i++)
+			{
+			
+			strcpy(tmp,token);
+
+			switch(attributes[i].attrType)
+			{
+				case INT :
+			memcpy(&tuple[attributes[i].offset],tmp,sizeof(int));
+	
+					break;
+				case FLOAT:
+			memcpy(&tuple[attributes[i].offset],tmp,sizeof(float));
+	
+				break;
+				case STRING:
+			memcpy(&tuple[attributes[i].offset],tmp,MAXNAME+1);
+				
+				break;
+				
+			};
+			
+			printf("%s\n",tmp);
+			token = strtok(NULL,",");
+
+			}
+			
+			rfh.InsertRec(tuple,rid);
+
+		}
+	
+	rmm.CloseFile(rfh);
+	fclose(f);
+}
+
     return (0);
 }
 

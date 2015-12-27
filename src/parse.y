@@ -21,13 +21,14 @@
 #include <sys/types.h>
 #include <cstdlib>
 #include <unistd.h>
-#include "redbase.h"
+#include "tinybase.h"
 #include "parser_internal.h"
 #include "pf.h"     // for PF_PrintError
 #include "rm.h"     // for RM_PrintError
 #include "ix.h"     // for IX_PrintError
 #include "sm.h"
 #include "ql.h"
+#include "rm_error.cc"
 
 using namespace std;
 
