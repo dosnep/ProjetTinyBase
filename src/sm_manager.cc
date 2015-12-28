@@ -127,6 +127,7 @@ RC SM_Manager::CreateTable(const char *relName,
 	strcpy(newTupleRel.relName, relName);
 	newTupleRel.tupleLength = offset;
 	newTupleRel.attrCount = attrCount;
+	printf("tupleLength : %d, attrCount : %d\n",newTupleRel.tupleLength,newTupleRel.attrCount);
 		//On l'insère dans le catalogue
 	res = relcatFH.InsertRec((char*)&newTupleRel,rid);
 			if(res != 0)
@@ -225,7 +226,7 @@ RM_Record rec;
 int res;
 RM_FileHandle rfh;
 char *name = new char[MAXNAME+1];
-strcpy(name,"relcat");
+strcpy(name,relName);
 int attrCount = 0;
 int tupleLength = 0;
 relcat tmpRel;
@@ -244,6 +245,7 @@ while(res != RM_EOF)
 		memcpy(&tmpRel, pData, sizeof(relcat));
 		attrCount = tmpRel.attrCount;
 		tupleLength = tmpRel.tupleLength;
+		printf("attrcount : %d, tupleLength : %d\n", attrCount, tupleLength);
 	
 }	
 fs.CloseScan();
@@ -276,14 +278,15 @@ while(res != RM_EOF)
 	
 }
 
-	char tuple[tupleLength];
+	char tuple[tupleLength+10];
 	char tmp[100];
 	char chaine[100];
 	char *token;
 	RID rid;
 	rmm.OpenFile(relName,rfh);
 	i = 0;
-	
+	int tmpIVal;
+	float tmpFVal;
 		while(fgets(chaine,100,f))
 		{	token = strtok(chaine, ",");	
 			for(i = 0; i<attrCount; i++)
@@ -294,11 +297,13 @@ while(res != RM_EOF)
 			switch(attributes[i].attrType)
 			{
 				case INT :
-			memcpy(&tuple[attributes[i].offset],tmp,sizeof(int));
-	
+			tmpIVal = atoi(tmp);
+		memcpy(&tuple[attributes[i].offset],&tmpIVal,sizeof(int));
 					break;
+					
 				case FLOAT:
-			memcpy(&tuple[attributes[i].offset],tmp,sizeof(float));
+			tmpFVal = atof(tmp);
+		memcpy(&tuple[attributes[i].offset],&tmpFVal,sizeof(float));
 	
 				break;
 				case STRING:
@@ -308,7 +313,8 @@ while(res != RM_EOF)
 				
 			};
 			
-			printf("%s\n",tmp);
+			//printf("%s\n",tmp);
+			
 			token = strtok(NULL,",");
 
 			}
