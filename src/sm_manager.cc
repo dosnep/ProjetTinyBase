@@ -212,10 +212,9 @@ RC SM_Manager::Load(const char *relName,
                     const char *fileName)
 {
 
-char chemin[60] = "/home/user/Bureau/ProjetTinyBase/src/data/";
 //On ouvre le fichier à charger
 FILE *f;
-f = fopen(strcat(chemin,fileName),"r");
+f = fopen(fileName,"r");
 if(f != NULL)
 {
 	
