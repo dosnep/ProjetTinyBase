@@ -17,6 +17,8 @@
 #include "sm.h"
 #include "ix.h"
 #include "rm.h"
+#include "unistd.h"
+#include "stddef.h"
 
 using namespace std;
 
@@ -80,6 +82,107 @@ RC QL_Manager::Insert(const char *relName,
     cout << "   nValues = " << nValues << "\n";
     for (i = 0; i < nValues; i++)
         cout << "   values[" << i << "]:" << values[i] << "\n";
+
+	
+//Nous allons ouvrir le catalogue rel pour y chercher les informations
+RM_FileScan fs;
+RM_Record rec;
+int res;
+RM_FileHandle rfh;
+char *name = new char[MAXNAME+1];
+strcpy(name,relName);
+int attrCount = 0;
+int tupleLength = 0;
+relcat tmpRel;
+char *pData;
+
+res = fs.OpenScan(smm->relcatFH,STRING,sizeof(name),offsetof(relcat,relName), EQ_OP,name, NO_HINT);
+if(res != 0)
+	return res;
+
+res = 0;
+while(res != RM_EOF)
+{	res = fs.GetNextRec(rec);
+		if(res==RM_EOF)
+			break;
+		
+		rec.GetData(pData);
+		memcpy(&tmpRel, pData, sizeof(relcat));
+		attrCount = tmpRel.attrCount;
+		tupleLength = tmpRel.tupleLength;
+		printf("attrcount : %d, tupleLength : %d\n", attrCount, tupleLength);
+	
+}	
+fs.CloseScan();
+
+//Nous allons ouvrir le catalogue des attributs pour y chercher toutes les infos sur les attributs.
+res = fs.OpenScan(smm->attrcatFH,STRING,sizeof(name),offsetof(attrcat,relName), EQ_OP,name, NO_HINT);
+if(res != 0)
+	return res;
+
+res = 0;
+//On récupère l'ensemble des attributs pour la table relcat
+DataAttrInfo *attributes = new DataAttrInfo[attrCount];
+i = 0;
+attrcat tmpAttr;
+while(res != RM_EOF)
+{	res = fs.GetNextRec(rec);
+		if(res==RM_EOF)
+			break;
+
+	rec.GetData(pData);
+	memcpy(&tmpAttr, pData, sizeof(attrcat));
+	
+	attributes[i].offset = tmpAttr.offset;
+	attributes[i].attrType = tmpAttr.attrType;
+	attributes[i].attrLength = tmpAttr.attrLength;
+	attributes[i].indexNo = tmpAttr.indexNo;
+	strcpy(attributes[i].relName,tmpAttr.relName);
+	strcpy(attributes[i].attrName,tmpAttr.attrName);
+	i++;
+	
+}
+
+	char tuple[tupleLength+10];
+	char tmp[MAXNAME+1];
+	RID rid;
+	rmm->OpenFile(relName,rfh);
+	i = 0;
+	int tmpIVal;
+	float tmpFVal;
+
+			for(i = 0; i<nValues; i++)
+			{
+			
+			switch(values[i].type)
+			{
+				case INT :
+			tmpIVal = (*(int*) values[i].data);
+		memcpy(&tuple[attributes[i].offset],&tmpIVal,sizeof(int));
+					break;
+					
+				case FLOAT:
+			tmpFVal = (*(float*) values[i].data);
+		memcpy(&tuple[attributes[i].offset],&tmpFVal,sizeof(float));
+	
+				break;
+				case STRING:
+				//memcpy(tmp,values[i].data,MAXNAME+1);
+				memcpy(&tuple[attributes[i].offset],values[i].data,MAXNAME+1);
+				
+				break;
+				
+			};
+						
+
+			}
+			
+			rfh.InsertRec(tuple,rid);
+
+		
+	
+	rmm->CloseFile(rfh);
+
 
     return 0;
 }
