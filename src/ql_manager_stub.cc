@@ -13,12 +13,13 @@
 #include <cassert>
 #include <unistd.h>
 #include "tinybase.h"
-#include "ql.h"
 #include "sm.h"
 #include "ix.h"
 #include "rm.h"
 #include "unistd.h"
 #include "stddef.h"
+#include "QL_TblScanOp.h"
+#include "QL_ProjectOp.h"
 
 using namespace std;
 
@@ -55,7 +56,7 @@ RC QL_Manager::Select(int nSelAttrs, const RelAttr selAttrs[],
 
     cout << "   nSelAttrs = " << nSelAttrs << "\n";
     for (i = 0; i < nSelAttrs; i++)
-        cout << "   selAttrs[" << i << "]:" << selAttrs[i] << "\n";
+        cout << "   selAttrs[" << i << "]:" <<  selAttrs[i].attrName << "\n";
 
     cout << "   nRelations = " << nRelations << "\n";
     for (i = 0; i < nRelations; i++)
@@ -64,6 +65,26 @@ RC QL_Manager::Select(int nSelAttrs, const RelAttr selAttrs[],
     cout << "   nCondtions = " << nConditions << "\n";
     for (i = 0; i < nConditions; i++)
         cout << "   conditions[" << i << "]:" << conditions[i] << "\n";
+
+int res;
+QL_Operator *f = new QL_TblScanOp(*rmm,*smm,"tst");
+QL_ProjectOp *tst = new QL_ProjectOp(*smm,*f,nSelAttrs,selAttrs);
+
+Printer p(tst->attributes, nSelAttrs);
+//On imprime le header des attributs
+p.PrintHeader(cout);
+RM_Record rec;
+char *pData;
+tst->Open();
+res = tst->GetNext(rec);
+while(res != RM_EOF)
+{
+	res = tst->GetNext(rec);
+	rec.GetData(pData);
+	p.Print(cout, pData);
+}
+
+tst->Close();
 
     return 0;
 }
@@ -178,10 +199,7 @@ while(res != RM_EOF)
 			}
 			
 			rfh.InsertRec(tuple,rid);
-
-		
-	
-	rmm->CloseFile(rfh);
+			rmm->CloseFile(rfh);
 
 
     return 0;
