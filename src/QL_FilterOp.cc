@@ -40,20 +40,42 @@ char *pData;
 int res;
 int iValLeft;
 int iValRight;
-
+float fValLeft;
+float fValRight;
 while(!isGood)
 {	res = op->GetNext(rec);
 	if(res != 0)
 			return res;
 
 	rec.GetData(pData);
-	memcpy(&iValLeft, pData, sizeof(int));
-	iValRight = (*(int *)cond.rhsValue.data); 
-
-	if(iValLeft == iValRight)
-	 {
+	
+	switch(cond.rhsValue.type)
+	{
+		case INT :
+		memcpy(&iValLeft, pData+offset, sizeof(int));
+		iValRight = (*(int *)cond.rhsValue.data); 
+		if(iValLeft == iValRight)
+		{
 		 isGood = true;
-	}
+		}
+		break;
+		
+		case FLOAT :
+		memcpy(&fValLeft, pData+offset, sizeof(float));
+		fValRight = (*(float *)cond.rhsValue.data); 
+		if(fValLeft == fValRight)
+		{
+		 isGood = true;
+		}		
+		
+		break;
+		
+		case STRING :
+		break;
+		
+	};
+	
+
 
 }
 return 0;
