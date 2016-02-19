@@ -68,9 +68,9 @@ RC QL_Manager::Select(int nSelAttrs, const RelAttr selAttrs[],
 
 int res;
 QL_Operator *f = new QL_TblScanOp(*rmm,*smm,"tst");
-QL_ProjectOp *tst = new QL_ProjectOp(*smm,*f,nSelAttrs,selAttrs);
+QL_ProjectOp *tst = new QL_ProjectOp(*smm,*f,nSelAttrs,selAttrs,"tst");
 
-Printer p(tst->attributes, nSelAttrs);
+Printer p(tst->attributes, tst->nbAttr);
 //On imprime le header des attributs
 p.PrintHeader(cout);
 RM_Record rec;

@@ -1,32 +1,65 @@
 #include "QL_ProjectOp.h"
 #include <stddef.h>
-
-QL_ProjectOp :: QL_ProjectOp(SM_Manager &smm, QL_Operator &op,int nbSelect, const RelAttr selAttrs[]) : smm(&smm), op(&op)
+#include <stdio.h>
+QL_ProjectOp :: QL_ProjectOp(SM_Manager &smm, QL_Operator &op,int nbSelect, const RelAttr selAttrs[],char *relation) : smm(&smm), op(&op)
 {
 int i;
-attributes = new DataAttrInfo[nbSelect];
 RM_FileScan fs;
-int res;
 attrcat tmp;
+relcat rel;
 RM_Record rec;
 char *pData;
 
-//On va chercher chacun des attributs à projeter dans le catalogue des attributs
-for(i = 0;i<nbSelect;i++)
+//Si l'attribut à sélectionner est *
+if(strcmp(selAttrs[0].attrName,"*") == 0)
 {
-fs.OpenScan(smm.attrcatFH,STRING,sizeof(MAXNAME+1),offsetof(attrcat,attrName), EQ_OP,selAttrs[i].attrName, NO_HINT);
-res = 0;
+	//On va récupérer le nombre d'attribut de la relation dans le catalogue des relations
+	fs.OpenScan(smm.relcatFH,STRING,sizeof(MAXNAME+1),offsetof(relcat,relName),EQ_OP,relation, NO_HINT);
+	fs.GetNextRec(rec);
+	rec.GetData(pData);
+	memcpy(&rel, pData, sizeof(relcat));	
+	nbAttr = rel.attrCount;
+	printf("nbAttr : %d\n",nbAttr);
+	fs.CloseScan();
+attributes = new DataAttrInfo[nbAttr];
+	//On va chercher chacun des attributs à projeter dans le catalogue des attributs
+	for(i = 0;i<nbAttr;i++)
+	{
+	fs.OpenScan(smm.attrcatFH,STRING,sizeof(MAXNAME+1),offsetof(attrcat,relName), EQ_OP,relation, NO_HINT);
+	fs.GetNextRec(rec);
+	rec.GetData(pData);
+	memcpy(&tmp, pData, sizeof(attrcat));
+	attributes[i].offset = tmp.offset;
+	attributes[i].attrType = tmp.attrType;
+	attributes[i].attrLength = tmp.attrLength;
+	attributes[i].indexNo = tmp.indexNo;
+	strcpy(attributes[i].relName,tmp.relName);
+	strcpy(attributes[i].attrName,tmp.attrName);
+	}
 
-res = fs.GetNextRec(rec);
-rec.GetData(pData);
-memcpy(&tmp, pData, sizeof(attrcat));
-attributes[i].offset = tmp.offset;
-attributes[i].attrType = tmp.attrType;
-attributes[i].attrLength = tmp.attrLength;
-attributes[i].indexNo = tmp.indexNo;
-strcpy(attributes[i].relName,tmp.relName);
-strcpy(attributes[i].attrName,tmp.attrName);
-fs.CloseScan();	
+	fs.CloseScan();	
+
+}
+
+else
+{
+	nbAttr = nbSelect;
+	attributes = new DataAttrInfo[nbAttr];
+	//On va chercher chacun des attributs à projeter dans le catalogue des attributs
+	for(i = 0;i<nbAttr;i++)
+	{
+	fs.OpenScan(smm.attrcatFH,STRING,sizeof(MAXNAME+1),offsetof(attrcat,attrName), EQ_OP,selAttrs[i].attrName, NO_HINT);
+	fs.GetNextRec(rec);
+	rec.GetData(pData);
+	memcpy(&tmp, pData, sizeof(attrcat));
+	attributes[i].offset = tmp.offset;
+	attributes[i].attrType = tmp.attrType;
+	attributes[i].attrLength = tmp.attrLength;
+	attributes[i].indexNo = tmp.indexNo;
+	strcpy(attributes[i].relName,tmp.relName);
+	strcpy(attributes[i].attrName,tmp.attrName);
+	fs.CloseScan();	
+	}
 }
 
 };
