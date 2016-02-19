@@ -46,6 +46,7 @@ int indexNo;	//Numéro de l'index de l'attribut
 class SM_Manager {
     friend class QL_Manager;
     friend class QL_ProjectOp;
+    friend class QL_FilterOp;
 public:
     SM_Manager    (IX_Manager &ixm, RM_Manager &rmm);
     ~SM_Manager   ();                             // Destructor

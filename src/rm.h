@@ -39,15 +39,16 @@ public:
     // Return the RID associated with the record
     RC GetRid (RID &rid) const;
 
+    char *pData;
+    int  recordSize;
+    RID  rid;
 private:
     // Copy constructor
     RM_Record  (const RM_Record &record);
     // Overloaded =
     RM_Record& operator=(const RM_Record &record);
 
-    char *pData;
-    int  recordSize;
-    RID  rid;
+
 };
 
 //

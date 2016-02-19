@@ -20,6 +20,10 @@
 #include "stddef.h"
 #include "QL_TblScanOp.h"
 #include "QL_ProjectOp.h"
+#include "QL_FilterOp.h"
+#include "stdio.h"
+#include "stdlib.h"
+
 
 using namespace std;
 
@@ -68,7 +72,8 @@ RC QL_Manager::Select(int nSelAttrs, const RelAttr selAttrs[],
 
 int res;
 QL_Operator *f = new QL_TblScanOp(*rmm,*smm,"tst");
-QL_ProjectOp *tst = new QL_ProjectOp(*smm,*f,nSelAttrs,selAttrs,"tst");
+QL_FilterOp *t = new QL_FilterOp(*smm,*f,conditions[0]);
+QL_ProjectOp *tst = new QL_ProjectOp(*smm,*t,nSelAttrs,selAttrs,"tst");
 
 Printer p(tst->attributes, tst->nbAttr);
 //On imprime le header des attributs
@@ -76,16 +81,19 @@ p.PrintHeader(cout);
 RM_Record rec;
 char *pData;
 tst->Open();
-res = tst->GetNext(rec);
+res = 0;
+
 while(res != RM_EOF)
 {
 	res = tst->GetNext(rec);
+	if(res == RM_EOF)
+		break;
 	rec.GetData(pData);
 	p.Print(cout, pData);
+
 }
-
 tst->Close();
-
+p.PrintFooter(cout);
     return 0;
 }
 
